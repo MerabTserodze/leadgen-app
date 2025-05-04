@@ -1,0 +1,51 @@
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+}
+.hero {
+    background: linear-gradient(to right, #009688, #4CAF50);
+    height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
+.overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 50px;
+    border-radius: 10px;
+}
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ffffff;
+    color: #009688;
+    text-decoration: none;
+    margin: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.button.alt {
+    background-color: #ffffff;
+    color: #4CAF50;
+}
+.features {
+    padding: 40px;
+    background-color: white;
+    text-align: center;
+}
+.features ul {
+    list-style: none;
+    padding: 0;
+}
+.features li {
+    margin: 15px 0;
+    font-size: 18px;
+}
+.chart-container {
+    padding: 40px;
+    background-color: #ffffff;
+}
