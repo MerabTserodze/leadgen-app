@@ -12,13 +12,16 @@
    
     <div class="hero">
         <div class="overlay">
+              <div class="navbar">
+        <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
+        <a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
             <h1>LeadGen: Ihre Lösung für gezielte E-Mail Kampagnen</h1>
             <p>Finden Sie gezielt E-Mails nach Stichworten und Standort. Einfach. Schnell. Effizient.</p>
             <a href="/login" class="button">Einloggen</a>
             <a href="/register" class="button alt">Registrieren</a>
         </div>
     </div>
- 
+ </div>
 
     <div class="features">
         <h2>Warum LeadGen?</h2>
@@ -29,10 +32,7 @@
             <li>📊 Persönliche Statistiken und Reports</li>
         </ul>
     </div>
-      <div class="navbar">
-        <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
-        <a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
-   </div>
+    
 
     <div class="chart-container">
         <h2>Beispielhafte Erfolgsauswertung</h2>
