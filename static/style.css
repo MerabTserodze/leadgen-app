@@ -1,129 +1,145 @@
-
+/* === Общие настройки === */
 body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
-}
-.hero {
-    background: linear-gradient(to right, #009688, #4CAF50);
-    height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    text-align: center;
-}
-.overlay {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 50px;
-    border-radius: 10px;
-}
-.button {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #ffffff;
-    color: #009688;
-    text-decoration: none;
-    margin: 10px;
-    border-radius: 5px;
-    font-weight: bold;
-}
-.button.alt {
-    background-color: #ffffff;
-    color: #4CAF50;
-}
-.features {
-    padding: 40px;
-    background-color: white;
-    text-align: center;
-}
-.features ul {
-    list-style: none;
     padding: 0;
-}
-.features li {
-    margin: 15px 0;
-    font-size: 18px;
-}
-.chart-container {
-    padding: 40px;
-    background-color: #ffffff;
-}
-/* === Navbar === */
-.navbar {
-    background-color: #f0f0f0;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background-color: #f9f9f9;
+    color: #333;
 }
 
-.navbar .btn {
-    margin-left: 10px;
-}
-
-/* === Buttons === */
-.btn {
-    padding: 10px 20px;
-    background-color: #008060;
-    color: white;
+a {
     text-decoration: none;
-    border-radius: 5px;
+    color: inherit;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* === Навигация === */
+.navbar {
+    background-color: #20232a;
+    color: #fff;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .logo {
+    font-size: 1.5rem;
     font-weight: bold;
+}
+
+.navbar ul {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+}
+
+.navbar ul li a {
+    color: #fff;
+    padding: 0.5rem 1rem;
+    transition: background 0.3s ease;
+}
+
+.navbar ul li a:hover {
+    background-color: #333;
+    border-radius: 5px;
+}
+
+/* === Кнопки === */
+.btn {
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
     transition: background-color 0.3s ease;
 }
 
-.btn-alt {
-    background-color: #005fcc;
-}
-
 .btn:hover {
-    background-color: #006d50;
+    background-color: #45a049;
 }
 
-/* === Hero === */
-.hero {
-    background: linear-gradient(to right, #009688, #4CAF50);
-    height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    text-align: center;
-    padding: 20px;
+.btn-secondary {
+    background-color: #007bff;
 }
 
-.overlay {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 40px;
-    border-radius: 12px;
-    max-width: 800px;
+.btn-secondary:hover {
+    background-color: #0069d9;
+}
+
+/* === Карточки / Статистика === */
+.card {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.card-value {
+    font-size: 2rem;
+    color: #4caf50;
+}
+
+/* === Грид Dashboard === */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* === Таблицы === */
+.table {
     width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
 }
 
-/* === Responsive === */
-@media screen and (max-width: 768px) {
-    .navbar {
+.table th, .table td {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f2f2f2;
+}
+
+/* === Мобильная адаптация === */
+@media (max-width: 768px) {
+    .navbar ul {
         flex-direction: column;
-        align-items: flex-start;
+        gap: 0.5rem;
     }
 
-    .overlay {
-        padding: 20px;
+    .dashboard-grid {
+        grid-template-columns: 1fr;
     }
 
-    .btn, .btn-alt {
+    .btn {
         width: 100%;
-        margin: 10px 0;
-        text-align: center;
-    }
-
-    .hero {
-        height: auto;
-        padding: 40px 20px;
     }
 }
 
+/* === Анимация появления === */
+.fade-in {
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
