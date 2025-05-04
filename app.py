@@ -7,9 +7,13 @@ app = Flask(__name__)
 def homepage():
     return render_template("home.html")
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return "<h2>Login Seite (bald mit Formular)</h2>"
+    if request.method == "POST":
+        # Обработка логина
+        return redirect("/dashboard")
+    return render_template("login.html")
+
 
 @app.route("/register")
 def register():
