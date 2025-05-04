@@ -24,9 +24,14 @@ def register():
         return redirect("/dashboard")
     return render_template("register.html")
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
-    return render_template("dashboard.html")
+    selected_plan = None
+    if request.method == "POST":
+        selected_plan = request.form.get("plan")
+        # Здесь ты можешь сохранить выбор в сессию, БД и т.д.
+    return render_template("dashboard.html", selected_plan=selected_plan)
+
 
 if __name__ == "__main__":
     app.run()
