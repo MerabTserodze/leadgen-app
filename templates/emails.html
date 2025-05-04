@@ -44,14 +44,17 @@
 
         <!-- Suchformular -->
         <form method="POST" action="/emails" onsubmit="showLoading()">
-            <label for="keyword">Stichwort(e):</label>
-            <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Zahnarzt, Anwalt" />
+    <label for="keyword">Stichwort(e):</label>
+    <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Restaurant, Anwalt" />
 
-            <label for="location">Ort / Region:</label>
-            <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, Hamburg" />
+    <label for="location">Ort / Adresse:</label>
+    <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, Hamburg" />
 
-            <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
-        </form>
+    <label for="radius">Radius (km):</label>
+    <input type="number" id="radius" name="radius" class="form-input" value="10" min="1" max="100" />
+
+    <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
+</form>
 
         <!-- Loading-Anzeige -->
         <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
