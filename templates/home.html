@@ -9,9 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="navbar">
-        <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
-        <a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
    
     <div class="hero">
         <div class="overlay">
@@ -21,7 +18,10 @@
             <a href="/register" class="button alt">Registrieren</a>
         </div>
     </div>
-  </div>
+   <div class="navbar">
+        <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
+        <a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
+   </div>
 
     <div class="features">
         <h2>Warum LeadGen?</h2>
