@@ -17,6 +17,12 @@
             margin-top: 30px;
             font-weight: bold;
         }
+        {% if results %}
+    <form action="/export" method="get" style="margin-top: 20px;">
+        <button type="submit" class="btn btn-secondary">Als Excel exportieren</button>
+    </form>
+{% endif %}
+
     </style>
 </head>
 <body>
