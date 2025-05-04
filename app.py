@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+app.secret_key = "supersecretkey"
+
 # === SerpAPI API-Key ===
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 
