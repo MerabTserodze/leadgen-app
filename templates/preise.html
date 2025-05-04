@@ -20,6 +20,17 @@
             <li><a href="/logout">Logout</a></li>
         </ul>
     </div>
+ <div class="card">
+    <div class="card-title">Aktueller Tarif</div>
+    <form method="POST" action="/dashboard">
+        <select name="plan" class="form-input">
+            <option value="free">Kostenlos</option>
+            <option value="starter">Starter – 29€/Monat</option>
+            <option value="profi">Profi – 69€/Monat</option>
+        </select>
+        <button type="submit" class="btn" style="margin-top: 10px;">Tarif wählen</button>
+    </form>
+ </div>
 
     <!-- 💳 ТАРИФЫ -->
     <div class="preise-container">
