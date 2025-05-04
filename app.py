@@ -46,6 +46,11 @@ def emails():
             f"{keyword} & Partner ({location}) – mail@partner-{keyword.lower()}.de"
         ]
     return render_template("emails.html", results=results)
+    
+@app.route("/send")
+def send():
+    return render_template("send.html")
+
 
 
 
