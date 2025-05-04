@@ -14,6 +14,10 @@ def login():
 @app.route("/register")
 def register():
     return "<h2>Registrierungsseite (bald verfügbar)</h2>"
+    @app.route("/preise")
+def preise():
+    return render_template("preise.html")
+
 
 if __name__ == "__main__":
     app.run()
