@@ -5,42 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>E-Mail-Suche – LeadGen</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <style>
+        .loading {
+            display: none;
+            margin-top: 20px;
+            font-style: italic;
+            color: #007bff;
+        }
+
+        .results-count {
+            margin-top: 30px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
+    <!-- Navbar -->
     <div class="navbar">
-    <div class="logo">LeadGen</div>
-    <ul>
-        <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/emails">E-Mail-Suche</a></li>
-        <li><a href="/send">E-Mail-Versand</a></li>
-        <li><a href="/preise">Tarife</a></li>
-        <li><a href="/logout">Logout</a></li>
-    </ul>
-</div>
-
+        <div class="logo">LeadGen</div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/emails">E-Mail-Suche</a></li>
+            <li><a href="/send">E-Mail-Versand</a></li>
+            <li><a href="/preise">Tarife</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
 
     <div class="container" style="padding: 40px 20px;">
         <h2>E-Mail-Suche</h2>
-        <form method="POST" action="/emails">
+
+        <!-- Suchformular -->
+        <form method="POST" action="/emails" onsubmit="showLoading()">
             <label for="keyword">Stichwort(e):</label>
-            <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Zahnarzt, Agentur" />
+            <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Zahnarzt, Anwalt" />
 
             <label for="location">Ort / Region:</label>
-            <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, NRW, Hamburg" />
+            <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, Hamburg" />
 
             <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
         </form>
 
+        <!-- Loading-Anzeige -->
+        <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
+
+        <!-- Ergebnisse -->
         {% if results %}
-            <h3 style="margin-top: 30px;">Gefundene Leads:</h3>
-            <ul>
-                {% for result in results %}
-                    <li>{{ result }}</li>
+            <div class="results-count">
+                ✅ {{ results|length }} E-Mail(s) gefunden:
+            </div>
+            <ul style="margin-top: 10px;">
+                {% for email in results %}
+                    <li>{{ email }}</li>
                 {% endfor %}
             </ul>
+        {% elif request.method == "POST" %}
+            <p style="margin-top: 30px;">❌ Keine Ergebnisse gefunden.</p>
         {% endif %}
     </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+    </script>
 
 </body>
 </html>
