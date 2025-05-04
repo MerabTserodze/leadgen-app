@@ -90,7 +90,16 @@ h1, h2, h3 {
     padding: 40px 20px;
     text-align: center;
 }
-
+.form-input {
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
 /* === ТАРИФЫ === */
 .preise-container {
     text-align: center;
