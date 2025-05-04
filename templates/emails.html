@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>E-Mail-Suche – LeadGen</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="logo">LeadGen</div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/emails">E-Mail-Suche</a></li>
+            <li><a href="/preise">Tarife</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="container" style="padding: 40px 20px;">
+        <h2>E-Mail-Suche</h2>
+        <form method="POST" action="/emails">
+            <label for="keyword">Stichwort(e):</label>
+            <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Zahnarzt, Agentur" />
+
+            <label for="location">Ort / Region:</label>
+            <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, NRW, Hamburg" />
+
+            <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
+        </form>
+
+        {% if results %}
+            <h3 style="margin-top: 30px;">Gefundene Leads:</h3>
+            <ul>
+                {% for result in results %}
+                    <li>{{ result }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+</body>
+</html>
