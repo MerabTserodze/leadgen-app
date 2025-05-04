@@ -1,41 +1,19 @@
 
-from flask import Flask, render_template, request, redirect, session, url_for
-import os
+from flask import Flask, render_template
 
 app = Flask(__name__)
-app.secret_key = "geheime_sitzung"
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
+def homepage():
+    return render_template("home.html")
+
+@app.route("/login")
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        if email == "admin@test.de" and password == "1234":
-            session["user"] = email
-            return redirect(url_for("dashboard"))
-        else:
-            return render_template("login.html", error="Falsche Daten.")
-    return render_template("login.html")
+    return "<h2>Login Seite (bald mit Formular)</h2>"
 
-@app.route("/dashboard")
-def dashboard():
-    if "user" not in session:
-        return redirect(url_for("login"))
-    return f"Hallo, {session['user']}! <a href='/logout'>Abmelden</a>"
-
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect(url_for("login"))
-
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/register")
 def register():
-    if request.method == "POST":
-        return redirect(url_for("login"))
-    return render_template("register.html")
+    return "<h2>Registrierungsseite (bald verfügbar)</h2>"
 
-@app.route("/reset", methods=["GET", "POST"])
-def reset_password():
-    if request.method == "POST":
-        return redirect(url_for("login"))
-    return render_template("reset_password.html")
+if __name__ == "__main__":
+    app.run()
