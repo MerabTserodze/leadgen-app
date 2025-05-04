@@ -49,3 +49,81 @@ body {
     padding: 40px;
     background-color: #ffffff;
 }
+/* === Navbar === */
+.navbar {
+    background-color: #f0f0f0;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar .btn {
+    margin-left: 10px;
+}
+
+/* === Buttons === */
+.btn {
+    padding: 10px 20px;
+    background-color: #008060;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-alt {
+    background-color: #005fcc;
+}
+
+.btn:hover {
+    background-color: #006d50;
+}
+
+/* === Hero === */
+.hero {
+    background: linear-gradient(to right, #009688, #4CAF50);
+    height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+}
+
+/* === Responsive === */
+@media screen and (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .overlay {
+        padding: 20px;
+    }
+
+    .btn, .btn-alt {
+        width: 100%;
+        margin: 10px 0;
+        text-align: center;
+    }
+
+    .hero {
+        height: auto;
+        padding: 40px 20px;
+    }
+}
+
