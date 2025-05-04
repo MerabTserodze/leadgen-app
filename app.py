@@ -32,6 +32,22 @@ def dashboard():
         # Здесь ты можешь сохранить выбор в сессию, БД и т.д.
     return render_template("dashboard.html", selected_plan=selected_plan)
 
+@app.route("/emails", methods=["GET", "POST"])
+def emails():
+    results = []
+    if request.method == "POST":
+        keyword = request.form.get("keyword")
+        location = request.form.get("location")
+
+        # Пример сгенерированных "лидов"
+        results = [
+            f"{keyword} Berlin – kontakt@{keyword.lower()}-{location.lower()}.de",
+            f"{keyword} Experts {location} – info@{keyword.lower()}experts-{location.lower()}.com",
+            f"{keyword} & Partner ({location}) – mail@partner-{keyword.lower()}.de"
+        ]
+    return render_template("emails.html", results=results)
+
+
 
 if __name__ == "__main__":
     app.run()
