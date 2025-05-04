@@ -1,0 +1,40 @@
+
+.preise-container {
+    text-align: center;
+    padding: 40px;
+    background-color: #f9f9f9;
+}
+
+.tarif-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.tarif {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 280px;
+}
+
+.tarif h2 {
+    color: #005fcc;
+}
+
+.tarif .preis {
+    font-size: 24px;
+    margin: 15px 0;
+}
+
+.tarif ul {
+    list-style: none;
+    padding: 0;
+}
+
+.tarif ul li {
+    margin: 10px 0;
+}
