@@ -7,10 +7,12 @@
     <title>LeadGen Tool</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
-<a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
 </head>
 <body>
+    <div class="navbar">
+        <a href="{{ url_for('login') }}" class="btn">Einloggen</a>
+        <a href="{{ url_for('register') }}" class="btn btn-alt">Registrieren</a>
+   
     <div class="hero">
         <div class="overlay">
             <h1>LeadGen: Ihre Lösung für gezielte E-Mail Kampagnen</h1>
@@ -19,6 +21,7 @@
             <a href="/register" class="button alt">Registrieren</a>
         </div>
     </div>
+  </div>
 
     <div class="features">
         <h2>Warum LeadGen?</h2>
