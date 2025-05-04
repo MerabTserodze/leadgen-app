@@ -19,6 +19,29 @@ def extract_emails_from_url(url):
         return re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
     except:
         return []
+def get_maps_results(keyword, location, radius_km):
+    params = {
+        "engine": "google_maps",
+        "q": keyword,
+        "location": location,
+        "hl": "de",
+        "type": "search",
+        "api_key": SERPAPI_KEY,
+        "google_domain": "google.de",
+        "radius": radius_km * 1000  # km → meter
+    }
+
+    response = requests.get("https://serpapi.com/search", params=params)
+    data = response.json()
+
+    urls = []
+    if "local_results" in data:
+        for place in data["local_results"]:
+            website = place.get("website")
+            if website:
+                urls.append(website)
+    return urls
+
 
 # === Получение сайтов из Google через SerpAPI ===
 def get_google_results(query):
