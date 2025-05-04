@@ -19,6 +19,17 @@ def extract_emails_from_url(url):
         return re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
     except:
         return []
+        EXCLUDE_DOMAINS = [
+    "sentry.io", "wixpress.com", "cloudflare", "example.com",
+    "no-reply", "noreply", "localhost", "wordpress.com"
+]
+
+def is_valid_email(email):
+    for d in EXCLUDE_DOMAINS:
+        if d in email:
+            return False
+    return True
+
 def get_email_limit():
     plan = session.get("plan", "free")  # по умолчанию бесплатно
     if plan == "starter":
