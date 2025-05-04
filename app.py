@@ -13,12 +13,37 @@ app.secret_key = "supersecretkey"
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 
 # === Email-поиск по URL ===
-def extract_emails_from_url(url):
+def extract_emails_from_url(base_url):
     try:
-        html = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"}).text
-        return re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
-    except:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        visited = set()
+        collected_emails = set()
+
+        # 1. Проверка главной страницы
+        html = requests.get(base_url, timeout=5, headers=headers).text
+        emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
+        collected_emails.update(emails)
+        visited.add(base_url)
+
+        # 2. Если ничего не найдено — проверить вложенные страницы
+        if not collected_emails:
+            common_paths = ["/kontakt", "/impressum", "/contact", "/about"]
+            for path in common_paths:
+                full_url = base_url.rstrip("/") + path
+                if full_url not in visited:
+                    try:
+                        sub_html = requests.get(full_url, timeout=5, headers=headers).text
+                        sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
+                        collected_emails.update(sub_emails)
+                    except:
+                        pass
+
+        return list(collected_emails)
+
+    except Exception as e:
+        print("Fehler beim Parsen:", e)
         return []
+
         EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
     "no-reply", "noreply", "localhost", "wordpress.com"
