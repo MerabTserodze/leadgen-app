@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, send_file, session
 from io import BytesIO
+import dns.resolver
 import openpyxl
 import requests
 import re
@@ -11,7 +12,12 @@ app.secret_key = "supersecretkey"
 
 # === SerpAPI API-Key ===
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
-
+def has_mx_record(domain):
+    try:
+        answers = dns.resolver.resolve(domain, "MX")
+        return len(answers) > 0
+    except:
+        return False
 # === Email-поиск по URL ===
 def extract_emails_from_url(base_url):
     try:
@@ -50,10 +56,19 @@ def extract_emails_from_url(base_url):
 ]
 
 def is_valid_email(email):
+    EXCLUDE_DOMAINS = [
+        "sentry.io", "wixpress.com", "cloudflare", "example.com",
+        "no-reply", "noreply", "localhost", "wordpress.com"
+    ]
+
     for d in EXCLUDE_DOMAINS:
-        if d in email:
+        if d in email.lower():
             return False
-    return True
+
+    # Проверка MX-записи
+    domain = email.split("@")[-1]
+    return has_mx_record(domain)
+
 
 def get_email_limit():
     plan = session.get("plan", "free")  # по умолчанию бесплатно
