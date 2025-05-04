@@ -92,6 +92,31 @@ def emails():
         session["emails"] = results  # ← сохраняем для экспорта
 
     return render_template("emails.html", results=results)
+@app.route("/export")
+def export():
+    emails = session.get("emails", [])
+    if not emails:
+        return "Keine Daten zum Exportieren."
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "E-Mails"
+
+    ws.append(["E-Mail-Adresse"])
+    for email in emails:
+        ws.append([email])
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        download_name="emails.xlsx",
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
 
 # === Заглушка: Email-Versand ===
