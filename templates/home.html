@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadGen Tool</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="hero">
+        <div class="overlay">
+            <h1>LeadGen: Ihre Lösung für gezielte E-Mail Kampagnen</h1>
+            <p>Finden Sie gezielt E-Mails nach Stichworten und Standort. Einfach. Schnell. Effizient.</p>
+            <a href="/login" class="button">Einloggen</a>
+            <a href="/register" class="button alt">Registrieren</a>
+        </div>
+    </div>
+
+    <div class="features">
+        <h2>Warum LeadGen?</h2>
+        <ul>
+            <li>🔍 Keyword-basierte E-Mail-Suche</li>
+            <li>📍 Standort und Umkreissuche</li>
+            <li>✉️ Automatisierte E-Mail-Generierung</li>
+            <li>📊 Persönliche Statistiken und Reports</li>
+        </ul>
+    </div>
+
+    <div class="chart-container">
+        <h2>Beispielhafte Erfolgsauswertung</h2>
+        <canvas id="leadChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('leadChart').getContext('2d');
+        const leadChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai'],
+                datasets: [{
+                    label: 'Generierte Leads',
+                    data: [50, 80, 60, 120, 150],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
