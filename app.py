@@ -81,19 +81,21 @@ def emails():
     if request.method == "POST":
         keyword = request.form.get("keyword")
         location = request.form.get("location")
-        query = f"{keyword} {location}"
+        radius_km = int(request.form.get("radius", 10))
 
-        urls = get_google_results(query)
+        urls = get_maps_results(keyword, location, radius_km)
         all_emails = set()
 
         for url in urls:
             emails = extract_emails_from_url(url)
             all_emails.update(emails)
 
-        results = list(all_emails)
-        session["emails"] = results  # ← сохраняем для экспорта
+        email_limit = get_email_limit()
+        results = list(all_emails)[:int(email_limit)]
+        session["emails"] = results
 
     return render_template("emails.html", results=results)
+
 @app.route("/export")
 def export():
     emails = session.get("emails", [])
