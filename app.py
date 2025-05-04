@@ -19,6 +19,14 @@ def extract_emails_from_url(url):
         return re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
     except:
         return []
+def get_email_limit():
+    plan = session.get("plan", "free")  # по умолчанию бесплатно
+    if plan == "starter":
+        return 50
+    elif plan == "profi":
+        return float("inf")
+    return 10
+
 def get_maps_results(keyword, location, radius_km):
     params = {
         "engine": "google_maps",
