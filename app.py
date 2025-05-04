@@ -1,6 +1,4 @@
-
 from flask import Flask, render_template, request, redirect
-
 
 app = Flask(__name__)
 
@@ -18,15 +16,17 @@ def login():
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
-    
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        # Обработка формы: email = request.form["email"], и т.д.
+        # Пример: email = request.form["email"]
         return redirect("/dashboard")
     return render_template("register.html")
 
-
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
 if __name__ == "__main__":
     app.run()
