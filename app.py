@@ -89,7 +89,10 @@ def emails():
             all_emails.update(emails)
 
         results = list(all_emails)
+        session["emails"] = results  # ← сохраняем для экспорта
+
     return render_template("emails.html", results=results)
+
 
 # === Заглушка: Email-Versand ===
 @app.route("/send")
