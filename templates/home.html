@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -9,7 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-   
+
+    <!-- HERO SECTION -->
     <div class="hero">
         <div class="overlay">
             <h1>LeadGen: Ihre Lösung für gezielte E-Mail Kampagnen</h1>
@@ -19,6 +19,7 @@
         </div>
     </div>
 
+    <!-- FEATURES -->
     <div class="features">
         <h2>Warum LeadGen?</h2>
         <ul>
@@ -28,13 +29,42 @@
             <li>📊 Persönliche Statistiken und Reports</li>
         </ul>
     </div>
-    
 
+    <!-- CHART -->
     <div class="chart-container">
         <h2>Beispielhafte Erfolgsauswertung</h2>
         <canvas id="leadChart" width="400" height="200"></canvas>
     </div>
 
+    <!-- TARIFE SECTION -->
+    <div class="pricing">
+        <h2>Unsere Tarife</h2>
+        <div class="plans">
+            <div class="plan">
+                <h3>Starter</h3>
+                <p class="price">9€ / Monat</p>
+                <ul>
+                    <li>Bis zu 100 Suchanfragen</li>
+                    <li>Grundfunktionen</li>
+                    <li>Limitierte E-Mail-Generierung</li>
+                </ul>
+                <a href="/register" class="button">Jetzt starten</a>
+            </div>
+            <div class="plan featured">
+                <h3>Profi</h3>
+                <p class="price">29€ / Monat</p>
+                <ul>
+                    <li>Unbegrenzte Suchanfragen</li>
+                    <li>Voller Funktionsumfang</li>
+                    <li>E-Mail-Vorlagen & Automation</li>
+                    <li>Statistiken und Export</li>
+                </ul>
+                <a href="/register" class="button alt">Profi werden</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHART JS -->
     <script>
         const ctx = document.getElementById('leadChart').getContext('2d');
         const leadChart = new Chart(ctx, {
@@ -59,5 +89,6 @@
             }
         });
     </script>
+
 </body>
 </html>
