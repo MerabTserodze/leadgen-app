@@ -14,10 +14,6 @@ def login():
         return redirect("/dashboard")
     return render_template("login.html")
 
-
-@app.route("/register")
-def register():
-    return "<h2>Registrierungsseite (bald verfügbar)</h2>"
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
