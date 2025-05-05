@@ -5,6 +5,8 @@ import openpyxl
 import requests
 import re
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -20,35 +22,44 @@ def has_mx_record(domain):
         return False
 # === Email-поиск по URL ===
 def extract_emails_from_url(base_url):
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        visited = set()
-        collected_emails = set()
+    headers = {"User-Agent": "Mozilla/5.0"}
+    visited = set()
+    collected_emails = set()
 
-        # 1. Проверка главной страницы
+    try:
+        # Главная страница
         html = requests.get(base_url, timeout=5, headers=headers).text
         emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
         collected_emails.update(emails)
         visited.add(base_url)
 
-        # 2. Если ничего не найдено — проверить вложенные страницы
-        if not collected_emails:
-            common_paths = ["/kontakt", "/impressum", "/contact", "/about"]
-            for path in common_paths:
-                full_url = base_url.rstrip("/") + path
-                if full_url not in visited:
-                    try:
-                        sub_html = requests.get(full_url, timeout=5, headers=headers).text
-                        sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
-                        collected_emails.update(sub_emails)
-                    except:
-                        pass
+        soup = BeautifulSoup(html, "html.parser")
+        internal_links = []
 
-        return list(collected_emails)
+        # Сбор внутренних ссылок
+        for a in soup.find_all("a", href=True):
+            href = a['href']
+            if href.startswith("/") or base_url in href:
+                full_url = urljoin(base_url, href)
+                parsed = urlparse(full_url)
+                clean_url = parsed.scheme + "://" + parsed.netloc + parsed.path
+                if clean_url not in visited and len(internal_links) < 5:
+                    internal_links.append(clean_url)
+
+        # Парсим до 5 внутренних страниц
+        for link in internal_links:
+            try:
+                sub_html = requests.get(link, timeout=5, headers=headers).text
+                sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
+                collected_emails.update(sub_emails)
+                visited.add(link)
+            except:
+                continue
 
     except Exception as e:
-        print("Fehler beim Parsen:", e)
-        return []
+        print("❌ Fehler beim Parsen:", e)
+
+    return list(collected_emails)
 
         EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
