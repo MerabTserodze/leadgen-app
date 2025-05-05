@@ -52,7 +52,7 @@ def extract_emails_from_url(base_url):
     collected_emails = set()
 
     try:
-        response = requests.get(base_url, timeout=10, headers=headers)
+        response = requests.get(base_url, timeout=5, headers=headers)
         if response.status_code != 200:
             return []
 
@@ -64,33 +64,33 @@ def extract_emails_from_url(base_url):
         soup = BeautifulSoup(html, "html.parser")
         internal_links = []
 
-        # Собираем до 5 внутренних ссылок
+        # ✅ Собираем до 10 внутренних ссылок
         for a in soup.find_all("a", href=True):
             href = a['href']
             if href.startswith("/") or base_url in href:
                 full_url = urljoin(base_url, href)
                 parsed = urlparse(full_url)
                 clean_url = parsed.scheme + "://" + parsed.netloc + parsed.path
-                if clean_url not in visited and len(internal_links) < 5:
+                if clean_url not in visited and len(internal_links) < 10:
                     internal_links.append(clean_url)
 
+        # ✅ Парсим все внутренние ссылки
         for link in internal_links:
             try:
-                sub_response = requests.get(link, timeout=7, headers=headers)
+                sub_response = requests.get(link, timeout=5, headers=headers)
                 if sub_response.status_code == 200:
                     sub_html = sub_response.text
                     sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
                     collected_emails.update(sub_emails)
                     visited.add(link)
-            except Exception:
+            except requests.RequestException:
                 continue
 
     except Exception as e:
         print("❌ Fehler beim Parsen:", e)
 
-    return list(collected_emails)[:100]  # Ограничим до 100 e-mail
-
     return list(collected_emails)
+
 EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
     "no-reply", "noreply", "localhost", "wordpress.com"
@@ -126,7 +126,7 @@ def get_maps_results(keyword, location, radius_km=10):
         "gl": "de",
         "google_domain": "google.de",
         "api_key": SERPAPI_KEY,
-        "num": 30,  # до 30 результатов
+        "num": 50,  # до 30 результатов
         "radius": radius_km * 1000  # в метрах
     }
 
@@ -151,17 +151,17 @@ def get_maps_results(keyword, location, radius_km=10):
 
 # === Получение сайтов из Google через SerpAPI ===
 def get_google_results(keyword, location):
-    query = f"{keyword} {location} kontakt email"
+    query = f"{keyword} {location} kontakt email impressum site:.de"
 
     params = {
         "engine": "google",
         "q": query,
         "location": location,
-        "hl": "de",                        # Язык результатов: немецкий
-        "gl": "de",                        # Гео: Германия
-        "google_domain": "google.de",     # Используем google.de
+        "hl": "de",
+        "gl": "de",
+        "google_domain": "google.de",
         "api_key": SERPAPI_KEY,
-        "num": 20                          # Можно увеличить до 30–50
+        "num": 50
     }
 
     try:
@@ -171,7 +171,6 @@ def get_google_results(keyword, location):
         urls = []
         for result in data.get("organic_results", []):
             link = result.get("link", "")
-            # Убираем явный мусор
             if any(x in link for x in ["facebook.com", "youtube.com", "tripadvisor.com"]):
                 continue
             urls.append(link)
@@ -181,6 +180,7 @@ def get_google_results(keyword, location):
     except Exception as e:
         print("❌ Fehler bei get_google_results:", e)
         return []
+
 
 # === Главная ===
 @app.route("/")
