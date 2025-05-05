@@ -6,3 +6,4 @@ serpapi
 openpyxl
 dnspython
 aiohttp
+uvicorn
