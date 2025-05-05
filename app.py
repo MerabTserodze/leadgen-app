@@ -223,7 +223,7 @@ def emails():
     emails = extract_emails_from_url(url)
     valid_emails = [e for e in emails if is_valid_email(e)]
     all_emails.update(valid_emails)
-except Exception as e:
+    except Exception as e:
     print(f"❌ Fehler beim Parsen von {url}:", e)
     continue
 
