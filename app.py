@@ -61,13 +61,13 @@ def extract_emails_from_url(base_url):
 
     return list(collected_emails)
 
-        EXCLUDE_DOMAINS = [
+EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
     "no-reply", "noreply", "localhost", "wordpress.com"
 ]
 
 def is_valid_email(email):
-    EXCLUDE_DOMAINS = [
+EXCLUDE_DOMAINS = [
         "sentry.io", "wixpress.com", "cloudflare", "example.com",
         "no-reply", "noreply", "localhost", "wordpress.com"
     ]
