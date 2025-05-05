@@ -224,9 +224,8 @@ def preise():
 
 # === E-Mail-Suche (ключ + локация) ===
 @app.route("/emails", methods=["GET", "POST"])
-async def emails():
+def emails():
     results = []
-
     if request.method == "POST":
         try:
             keyword = request.form.get("keyword")
@@ -239,8 +238,11 @@ async def emails():
 
             print(f"🔍 {len(urls)} URLs gefunden.")
 
-            emails = await extract_emails_from_url_async(urls)
-            valid_emails = [e for e in emails if is_valid_email(e)]
+            # 👉 Асинхронный парсинг
+            all_emails = asyncio.run(extract_emails_from_url_async(urls))
+
+            # ✅ Фильтрация и сохранение
+            valid_emails = [e for e in all_emails if is_valid_email(e)]
             results = list(set(valid_emails))
             session["emails"] = results
 
@@ -249,6 +251,7 @@ async def emails():
             return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
+
 
 
 @app.route("/export")
