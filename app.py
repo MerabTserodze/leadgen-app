@@ -219,14 +219,13 @@ def emails():
             all_emails = set()
 
             for url in urls:
-        try:
-    emails = extract_emails_from_url(url)
-    valid_emails = [e for e in emails if is_valid_email(e)]
-    all_emails.update(valid_emails)
-    except Exception as e:
-    print(f"❌ Fehler beim Parsen von {url}:", e)
-    continue
-
+                try:
+                    emails = extract_emails_from_url(url)
+                    valid_emails = [e for e in emails if is_valid_email(e)]
+                    all_emails.update(valid_emails)
+                except Exception as e:
+                    print(f"❌ Fehler beim Parsen von {url}:", e)
+                    continue
 
             results = list(all_emails)
             session["emails"] = results  # сохраняем для экспорта
@@ -236,6 +235,7 @@ def emails():
             return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
+
 
 @app.route("/export")
 def export():
