@@ -185,10 +185,11 @@ def emails():
 
         for url in urls:
             emails = extract_emails_from_url(url)
-            all_emails.update(emails)
+            valid_emails = [e for e in emails if is_valid_email(e)]
+            all_emails.update(valid_emails)
 
-       results = list(all_emails)  # 🔓 убрано ограничение
-
+        # ❗️Эта строка должна иметь тот же отступ, что и весь блок
+        results = list(all_emails)
 
     return render_template("emails.html", results=results)
 
