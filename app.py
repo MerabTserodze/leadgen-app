@@ -224,7 +224,7 @@ def preise():
 
 # === E-Mail-Suche (ключ + локация) ===
 @app.route("/emails", methods=["GET", "POST"])
-def emails():
+async def emails():
     results = []
 
     if request.method == "POST":
@@ -237,21 +237,18 @@ def emails():
             google_urls = get_google_results(keyword, location)
             urls = list(set(maps_urls + google_urls))
 
-            # Асинхронный запуск
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            raw_emails = loop.run_until_complete(extract_emails_from_url_async(urls))
+            print(f"🔍 {len(urls)} URLs gefunden.")
 
-            valid_emails = [e for e in raw_emails if is_valid_email(e)]
+            emails = await extract_emails_from_url_async(urls)
+            valid_emails = [e for e in emails if is_valid_email(e)]
             results = list(set(valid_emails))
-
             session["emails"] = results
+
         except Exception as e:
-            print("❌ Fehler:", e)
-            return "Fehler beim Verarbeiten der Anfrage."
+            print("❌ Gesamtfehler beim Suchen:", e)
+            return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
-
 
 
 @app.route("/export")
