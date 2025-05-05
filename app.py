@@ -105,13 +105,6 @@ def is_valid_email(email):
     domain = email.split("@")[-1]
     return has_mx_record(domain)
 
-    for d in EXCLUDE_DOMAINS:
-        if d in email.lower():
-            return False
-
-    # Проверка MX-записи
-    domain = email.split("@")[-1]
-    return has_mx_record(domain)
 
 
 def get_email_limit():
