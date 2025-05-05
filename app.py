@@ -7,7 +7,31 @@ import re
 import sys
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup
+import aiohttp
+import asyncio
+
+EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+
+async def fetch_html(session, url):
+    try:
+        async with session.get(url, timeout=10) as response:
+            return await response.text()
+    except Exception:
+        return ""
+
+async def extract_emails_from_url_async(urls):
+    collected_emails = set()
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    async with aiohttp.ClientSession(headers=headers) as session:
+        tasks = [fetch_html(session, url) for url in urls]
+        responses = await asyncio.gather(*tasks)
+
+        for html in responses:
+            emails = re.findall(EMAIL_REGEX, html)
+            collected_emails.update(emails)
+
+    return list(collected_emails)
 
 app = Flask(__name__)
 
@@ -209,32 +233,25 @@ def emails():
             location = request.form.get("location")
             radius_km = int(request.form.get("radius", 10))
 
-            # Получаем сайты из Maps и обычного Google
             maps_urls = get_maps_results(keyword, location, radius_km)
             google_urls = get_google_results(keyword, location)
             urls = list(set(maps_urls + google_urls))
 
-            print(f"🔍 {len(urls)} URLs gefunden.")
+            # Асинхронный запуск
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            raw_emails = loop.run_until_complete(extract_emails_from_url_async(urls))
 
-            all_emails = set()
+            valid_emails = [e for e in raw_emails if is_valid_email(e)]
+            results = list(set(valid_emails))
 
-            for url in urls:
-                try:
-                    emails = extract_emails_from_url(url)
-                    valid_emails = [e for e in emails if is_valid_email(e)]
-                    all_emails.update(valid_emails)
-                except Exception as e:
-                    print(f"❌ Fehler beim Parsen von {url}:", e)
-                    continue
-
-            results = list(all_emails)
-            session["emails"] = results  # сохраняем для экспорта
-
+            session["emails"] = results
         except Exception as e:
-            print("❌ Gesamtfehler beim Suchen:", e)
-            return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
+            print("❌ Fehler:", e)
+            return "Fehler beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
+
 
 
 @app.route("/export")
