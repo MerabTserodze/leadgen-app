@@ -183,9 +183,8 @@ def emails():
             emails = extract_emails_from_url(url)
             all_emails.update(emails)
 
-        email_limit = get_email_limit()
-        results = list(all_emails)[:int(email_limit)]
-        session["emails"] = results
+       results = list(all_emails)  # 🔓 убрано ограничение
+
 
     return render_template("emails.html", results=results)
 
