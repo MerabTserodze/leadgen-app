@@ -52,7 +52,7 @@ def extract_emails_from_url(base_url):
     collected_emails = set()
 
     try:
-        response = requests.get(base_url, timeout=5, headers=headers)
+        response = requests.get(base_url, timeout=10, headers=headers)
         if response.status_code != 200:
             return []
 
@@ -64,30 +64,31 @@ def extract_emails_from_url(base_url):
         soup = BeautifulSoup(html, "html.parser")
         internal_links = []
 
-        # Собираем до 3 внутренних ссылок
+        # Собираем до 5 внутренних ссылок
         for a in soup.find_all("a", href=True):
             href = a['href']
             if href.startswith("/") or base_url in href:
                 full_url = urljoin(base_url, href)
                 parsed = urlparse(full_url)
                 clean_url = parsed.scheme + "://" + parsed.netloc + parsed.path
-                if clean_url not in visited and len(internal_links) < 3:
+                if clean_url not in visited and len(internal_links) < 5:
                     internal_links.append(clean_url)
 
-        # Пытаемся спарсить каждую внутреннюю ссылку
         for link in internal_links:
             try:
-                sub_response = requests.get(link, timeout=5, headers=headers)
+                sub_response = requests.get(link, timeout=7, headers=headers)
                 if sub_response.status_code == 200:
                     sub_html = sub_response.text
                     sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
                     collected_emails.update(sub_emails)
                     visited.add(link)
-            except requests.RequestException:
+            except Exception:
                 continue
 
     except Exception as e:
         print("❌ Fehler beim Parsen:", e)
+
+    return list(collected_emails)[:100]  # Ограничим до 100 e-mail
 
     return list(collected_emails)
 EXCLUDE_DOMAINS = [
