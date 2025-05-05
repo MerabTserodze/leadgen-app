@@ -67,10 +67,14 @@ EXCLUDE_DOMAINS = [
 ]
 
 def is_valid_email(email):
-EXCLUDE_DOMAINS = [
-        "sentry.io", "wixpress.com", "cloudflare", "example.com",
-        "no-reply", "noreply", "localhost", "wordpress.com"
-    ]
+    email = email.lower()
+
+    for d in EXCLUDE_DOMAINS:
+        if d in email:
+            return False
+
+    domain = email.split("@")[-1]
+    return has_mx_record(domain)
 
     for d in EXCLUDE_DOMAINS:
         if d in email.lower():
