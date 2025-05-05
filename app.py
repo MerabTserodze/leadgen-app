@@ -126,8 +126,8 @@ def get_maps_results(keyword, location, radius_km=10):
         "gl": "de",
         "google_domain": "google.de",
         "api_key": SERPAPI_KEY,
-        "num": 50,  # до 30 результатов
-        "radius": radius_km * 1000  # в метрах
+        "num": 50,  # больше результатов
+        "radius": radius_km * 1000  # переводим км в метры
     }
 
     try:
@@ -146,6 +146,7 @@ def get_maps_results(keyword, location, radius_km=10):
     except Exception as e:
         print("❌ Fehler bei get_maps_results:", e)
         return []
+
 
 
 
