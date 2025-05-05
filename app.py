@@ -97,49 +97,71 @@ def get_email_limit():
         return float("inf")
     return 10
 
-def get_maps_results(keyword, location, radius_km):
+def get_maps_results(keyword, location, radius_km=10):
     params = {
         "engine": "google_maps",
+        "type": "search",
         "q": keyword,
         "location": location,
         "hl": "de",
-        "type": "search",
-        "api_key": SERPAPI_KEY,
+        "gl": "de",
         "google_domain": "google.de",
-        "radius": radius_km * 1000  # km → meter
+        "api_key": SERPAPI_KEY,
+        "num": 30,  # до 30 результатов
+        "radius": radius_km * 1000  # в метрах
     }
 
-    response = requests.get("https://serpapi.com/search", params=params)
-    data = response.json()
+    try:
+        response = requests.get("https://serpapi.com/search", params=params)
+        data = response.json()
+        results = data.get("local_results", [])
 
-    urls = []
-    if "local_results" in data:
-        for place in data["local_results"]:
-            website = place.get("website")
-            if website:
-                urls.append(website)
-    return urls
+        urls = []
+        for place in results:
+            link = place.get("website")
+            if link:
+                urls.append(link)
+
+        return urls
+
+    except Exception as e:
+        print("❌ Fehler bei get_maps_results:", e)
+        return []
+
 
 
 # === Получение сайтов из Google через SerpAPI ===
-def get_google_results(query):
+def get_google_results(keyword, location):
+    query = f"{keyword} {location} kontakt email"
+
     params = {
         "engine": "google",
         "q": query,
+        "location": location,
+        "hl": "de",                        # Язык результатов: немецкий
+        "gl": "de",                        # Гео: Германия
+        "google_domain": "google.de",     # Используем google.de
         "api_key": SERPAPI_KEY,
-        "num": 10,
-        "hl": "de"
+        "num": 20                          # Можно увеличить до 30–50
     }
-    response = requests.get("https://serpapi.com/search", params=params)
-    results = response.json()
 
-    urls = []
-    if "organic_results" in results:
-        for item in results["organic_results"]:
-            link = item.get("link")
-            if link:
-                urls.append(link)
-    return urls
+    try:
+        response = requests.get("https://serpapi.com/search", params=params)
+        data = response.json()
+
+        urls = []
+        for result in data.get("organic_results", []):
+            link = result.get("link", "")
+            # Убираем явный мусор
+            if any(x in link for x in ["facebook.com", "youtube.com", "tripadvisor.com"]):
+                continue
+            urls.append(link)
+
+        return urls
+
+    except Exception as e:
+        print("❌ Fehler bei get_google_results:", e)
+        return []
 
 # === Главная ===
 @app.route("/")
