@@ -201,21 +201,37 @@ def preise():
 @app.route("/emails", methods=["GET", "POST"])
 def emails():
     results = []
+
     if request.method == "POST":
-        keyword = request.form.get("keyword")
-        location = request.form.get("location")
-        radius_km = int(request.form.get("radius", 10))
+        try:
+            keyword = request.form.get("keyword")
+            location = request.form.get("location")
+            radius_km = int(request.form.get("radius", 10))
 
-        urls = get_maps_results(keyword, location, radius_km)
-        all_emails = set()
+            # Получаем сайты из Maps и обычного Google
+            maps_urls = get_maps_results(keyword, location, radius_km)
+            google_urls = get_google_results(keyword, location)
+            urls = list(set(maps_urls + google_urls))
 
-        for url in urls:
-            emails = extract_emails_from_url(url)
-            valid_emails = [e for e in emails if is_valid_email(e)]
-            all_emails.update(valid_emails)
+            print(f"🔍 {len(urls)} URLs gefunden.")
 
-        # ❗️Эта строка должна иметь тот же отступ, что и весь блок
-        results = list(all_emails)
+            all_emails = set()
+
+            for url in urls:
+                try:
+                    emails = extract_emails_from_url(url)
+                    valid_emails = [e for e in emails if is_valid_email(e)]
+                    all_emails.update(valid_emails)
+                except Exception as e:
+                    print(f"⚠️ Fehler bei {url}: {e}")
+                    continue
+
+            results = list(all_emails)
+            session["emails"] = results  # сохраняем для экспорта
+
+        except Exception as e:
+            print("❌ Gesamtfehler beim Suchen:", e)
+            return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
 
