@@ -27,8 +27,11 @@ def extract_emails_from_url(base_url):
     collected_emails = set()
 
     try:
-        # Главная страница
-        html = requests.get(base_url, timeout=5, headers=headers).text
+        response = requests.get(base_url, timeout=5, headers=headers)
+        if response.status_code != 200:
+            return []
+
+        html = response.text
         emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", html)
         collected_emails.update(emails)
         visited.add(base_url)
@@ -36,31 +39,32 @@ def extract_emails_from_url(base_url):
         soup = BeautifulSoup(html, "html.parser")
         internal_links = []
 
-        # Сбор внутренних ссылок
+        # Собираем до 3 внутренних ссылок
         for a in soup.find_all("a", href=True):
             href = a['href']
             if href.startswith("/") or base_url in href:
                 full_url = urljoin(base_url, href)
                 parsed = urlparse(full_url)
                 clean_url = parsed.scheme + "://" + parsed.netloc + parsed.path
-                if clean_url not in visited and len(internal_links) < 5:
+                if clean_url not in visited and len(internal_links) < 3:
                     internal_links.append(clean_url)
 
-        # Парсим до 5 внутренних страниц
+        # Пытаемся спарсить каждую внутреннюю ссылку
         for link in internal_links:
             try:
-                sub_html = requests.get(link, timeout=5, headers=headers).text
-                sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
-                collected_emails.update(sub_emails)
-                visited.add(link)
-            except:
+                sub_response = requests.get(link, timeout=5, headers=headers)
+                if sub_response.status_code == 200:
+                    sub_html = sub_response.text
+                    sub_emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", sub_html)
+                    collected_emails.update(sub_emails)
+                    visited.add(link)
+            except requests.RequestException:
                 continue
 
     except Exception as e:
         print("❌ Fehler beim Parsen:", e)
 
     return list(collected_emails)
-
 EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
     "no-reply", "noreply", "localhost", "wordpress.com"
