@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file, session
+from flask import jsonify
 from io import BytesIO
+import json
 import sqlite3
 import hashlib
 import dns.resolver
@@ -9,6 +11,13 @@ import asyncio
 from urllib.parse import urljoin, urlparse
 import aiohttp
 import requests
+import stripe
+from flask import jsonify, abort
+
+
+
+stripe.api_key = "sk_test_51RP84y2YuXttkrNbFOBBvH5l6ZQU2tqS3AfA6qGzovQ56yOyLAzVvFxjp8JZazbu9IndbIeR6XyQL3jXGwsiYzBQ00StrGQ1fC"  # ⬅️ вставь свой SECRET KEY
+DOMAIN = "https://leadgen-app-w8bo.onrender.com"  # твой домен
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -291,6 +300,62 @@ def send():
 def logout():
     session.clear()
     return redirect("/")
+    
+@app.route("/subscribe/<plan>")
+def subscribe(plan):
+    prices = {
+        "starter": "price_1RP8Ah2YuXttkrNbVuSRwuhu",
+        "profi": "price_1RP8Bw2vYUtktrNbZUPVMUUQ"
+    }
+
+    if plan not in prices:
+        return "Ungültiger Plan", 400
+
+    checkout_session = stripe.checkout.Session.create(
+        success_url=DOMAIN + "/success",
+        cancel_url=DOMAIN + "/preise",
+        payment_method_types=["sepa_debit"],
+        mode="subscription",
+        line_items=[{"price": prices[plan], "quantity": 1}],
+        metadata={"plan": plan, "user_id": session.get("user_id")}
+    )
+
+    return redirect(checkout_session.url, code=303)  # <- теперь правильно отформатирован
+
+
+
+
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("stripe-signature")
+
+    webhook_secret = "whsec_n7ekG7jJbeh2yh154SpUhGGJAD5kyeoS"  # вставь Stripe Webhook Secret
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+    except stripe.error.SignatureVerificationError:
+        return "⚠️ Invalid signature", 400
+
+    if event["type"] == "checkout.session.completed":
+        session_data = event["data"]["object"]
+        plan = session_data["metadata"].get("plan")
+        user_id = session_data["metadata"].get("user_id")
+
+        if plan and user_id:
+             conn = sqlite3.connect("leadgen.db")
+             cur = conn.cursor()
+             cur.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
+             conn.commit()
+             conn.close()
+
+
+    return jsonify({"status": "success"}), 200
+    
+@app.route("/success")
+def success():
+    return "🎉 Zahlung erfolgreich! Tarif wird bald aktualisiert."
 
 if __name__ != "__main__":
     gunicorn_app = app
