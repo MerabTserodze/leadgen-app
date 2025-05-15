@@ -1,6 +1,3 @@
-# Вместо попытки редактировать несуществующий файл, создадим полностью обновлённую версию app.py с нужными исправлениями.
-
-updated_code = """
 from flask import Flask, render_template, request, redirect, send_file, session
 from io import BytesIO
 import dns.resolver
@@ -11,7 +8,12 @@ from urllib.parse import urljoin, urlparse
 import aiohttp
 import requests
 
-EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+"
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
+
+SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
+
+EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 
 EXCLUDE_DOMAINS = [
     "sentry.io", "wixpress.com", "cloudflare", "example.com",
@@ -61,11 +63,6 @@ async def extract_emails_from_url_async(urls):
             collected_emails.update(emails)
 
     return list(collected_emails)
-
-app = Flask(__name__)
-app.secret_key = "supersecretkey"
-
-SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 
 def get_email_limit():
     plan = session.get("plan", "free")
@@ -212,9 +209,8 @@ def export():
 def send():
     return render_template("send.html")
 
+if __name__ != "__main__":
+    gunicorn_app = app
+
 if __name__ == "__main__":
     app.run(debug=True)
-"""
-app = Flask(__name__)
-
-# Сохраняем
