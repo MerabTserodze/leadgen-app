@@ -217,8 +217,3 @@ if __name__ == "__main__":
 """
 
 # Сохраняем
-updated_file_path = "/mnt/data/app_updated.py"
-with open(updated_file_path, "w", encoding="utf-8") as f:
-    f.write(updated_code)
-
-updated_file_path
