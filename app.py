@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, send_file, session
 from io import BytesIO
+import sqlite3
+import hashlib
 import dns.resolver
 import openpyxl
 import re
@@ -65,12 +67,14 @@ async def extract_emails_from_url_async(urls):
     return list(collected_emails)
 
 def get_email_limit():
-    plan = session.get("plan", "free")
+    user = get_current_user()
+    plan = user["plan"] if user else "free"
     if plan == "starter":
         return 50
     elif plan == "profi":
         return float("inf")
     return 10
+
 
 def get_maps_results(keyword, location, radius_km=10):
     params = {
@@ -138,6 +142,43 @@ def init_db():
 
 init_db()  # запускается при старте
 
+def register_user(email, password):
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    conn = sqlite3.connect("leadgen.db")
+    cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password_hash))
+        conn.commit()
+        return True
+    except:
+        return False
+    finally:
+        conn.close()
+
+def login_user(email, password):
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    conn = sqlite3.connect("leadgen.db")
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE email=? AND password=?", (email, password_hash))
+    user = cur.fetchone()
+    conn.close()
+    if user:
+        session["user_id"] = user[0]
+        return True
+    return False
+
+def get_current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    conn = sqlite3.connect("leadgen.db")
+    cur = conn.cursor()
+    cur.execute("SELECT id, email, plan FROM users WHERE id=?", (user_id,))
+    user = cur.fetchone()
+    conn.close()
+    return {"id": user[0], "email": user[1], "plan": user[2]} if user else None
+
+
 
 @app.route("/")
 def homepage():
@@ -146,14 +187,23 @@ def homepage():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        return redirect("/dashboard")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        if login_user(email, password):
+            return redirect("/dashboard")
+        return "Fehler: Ungültige Zugangsdaten."
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        return redirect("/dashboard")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        if register_user(email, password):
+            return redirect("/login")
+        return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
+
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
@@ -226,6 +276,10 @@ def export():
 @app.route("/send")
 def send():
     return render_template("send.html")
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 
 if __name__ != "__main__":
     gunicorn_app = app
