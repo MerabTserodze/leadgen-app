@@ -25,6 +25,28 @@
     <div class="container">
         <h2>Willkommen zurück!</h2>
 
+        <!-- 🔽 ТАРИФНЫЙ ПЛАН (новое) -->
+        <div class="card" style="padding: 20px; margin-bottom: 20px;">
+            <h3>🔐 Wähle deinen Plan</h3>
+            <form method="POST">
+                <label>
+                    <input type="radio" name="plan" value="free" {% if selected_plan == 'free' %}checked{% endif %}>
+                    Free (bis zu 10 E-Mails)
+                </label><br>
+                <label>
+                    <input type="radio" name="plan" value="starter" {% if selected_plan == 'starter' %}checked{% endif %}>
+                    Starter (bis zu 50 E-Mails)
+                </label><br>
+                <label>
+                    <input type="radio" name="plan" value="profi" {% if selected_plan == 'profi' %}checked{% endif %}>
+                    Profi (unbegrenzt)
+                </label><br><br>
+                <button type="submit">Plan speichern</button>
+            </form>
+            <p>Aktueller Plan: <strong>{{ selected_plan|capitalize }}</strong></p>
+        </div>
+        <!-- 🔼 КОНЕЦ ДОБАВЛЕННОГО -->
+
         <div class="dashboard-grid">
             <div class="card">
                 <div class="card-title">Generierte Leads</div>
