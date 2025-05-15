@@ -207,10 +207,21 @@ def register():
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
-    selected_plan = session.get("plan", "free")  # по умолчанию
+    user = get_current_user()
+    if not user:
+        return redirect("/login")
+
+    selected_plan = user["plan"]
+
     if request.method == "POST":
-        selected_plan = request.form.get("plan")
-        session["plan"] = selected_plan
+        new_plan = request.form.get("plan")
+        conn = sqlite3.connect("leadgen.db")
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET plan=? WHERE id=?", (new_plan, user["id"]))
+        conn.commit()
+        conn.close()
+        selected_plan = new_plan
+
     return render_template("dashboard.html", selected_plan=selected_plan)
 
 
