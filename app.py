@@ -122,6 +122,22 @@ def get_google_results(keyword, location):
     except Exception as e:
         print("❌ Fehler bei get_google_results:", e)
         return []
+def init_db():
+    conn = sqlite3.connect("leadgen.db")
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            plan TEXT DEFAULT 'free'
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()  # запускается при старте
+
 
 @app.route("/")
 def homepage():
