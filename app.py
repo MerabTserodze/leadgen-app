@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, send_file, session
-from flask import jsonify
+from flask import Flask, render_template, request, redirect, send_file, session, jsonify, abort
+from dotenv import load_dotenv
 from io import BytesIO
 import json
 import sqlite3
@@ -13,11 +13,10 @@ import aiohttp
 import requests
 import stripe
 import os
-from dotenv import load_dotenv
+
 
 load_dotenv()
 
-from flask import jsonify, abort
 
 
 
@@ -335,7 +334,7 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get("stripe-signature")
 
-       webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")  # вставь Stripe Webhook Secret
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")  # вставь Stripe Webhook Secret
     event = None
 
     try:
@@ -349,14 +348,14 @@ def stripe_webhook():
         user_id = session_data["metadata"].get("user_id")
 
         if plan and user_id:
-             conn = sqlite3.connect("leadgen.db")
-             cur = conn.cursor()
-             cur.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
-             conn.commit()
-             conn.close()
-
+            conn = sqlite3.connect("leadgen.db")
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
+            conn.commit()
+            conn.close()
 
     return jsonify({"status": "success"}), 200
+
     
 @app.route("/success")
 def success():
@@ -366,4 +365,4 @@ if __name__ != "__main__":
     gunicorn_app = app
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
