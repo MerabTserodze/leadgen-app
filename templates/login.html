@@ -1,40 +1,23 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Login – LeadGen</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <div class="container">
+        <h2>🔐 Login</h2>
+        <form method="POST">
+            <label for="email">E-Mail:</label><br>
+            <input type="email" name="email" required><br><br>
 
-    <!-- Навбар -->
-    <div class="navbar">
-    <div class="logo">LeadGen</div>
-    <ul>
-        <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/emails">E-Mail-Suche</a></li>
-        <li><a href="/send">E-Mail-Versand</a></li>
-        <li><a href="/preise">Tarife</a></li>
-        <li><a href="/logout">Logout</a></li>
-    </ul>
-</div>
+            <label for="password">Passwort:</label><br>
+            <input type="password" name="password" required><br><br>
 
-
-    <!-- Форма входа -->
-    <div class="container" style="max-width: 500px; padding: 40px 20px;">
-        <h2 style="text-align: center;">Einloggen</h2>
-        <form method="POST" action="/login">
-
-            <label for="email">E-Mail</label>
-            <input type="email" id="email" name="email" required class="form-input">
-
-            <label for="password">Passwort</label>
-            <input type="password" id="password" name="password" required class="form-input">
-
-            <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Login</button>
+            <button type="submit">Login</button>
         </form>
+        <p>Kein Account? <a href="/register">Jetzt registrieren</a></p>
     </div>
-
 </body>
 </html>
