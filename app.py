@@ -141,10 +141,12 @@ def register():
 
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
-    selected_plan = None
+    selected_plan = session.get("plan", "free")  # по умолчанию
     if request.method == "POST":
         selected_plan = request.form.get("plan")
+        session["plan"] = selected_plan
     return render_template("dashboard.html", selected_plan=selected_plan)
+
 
 @app.route("/preise")
 def preise():
