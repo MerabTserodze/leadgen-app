@@ -12,15 +12,20 @@ from urllib.parse import urljoin, urlparse
 import aiohttp
 import requests
 import stripe
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import jsonify, abort
 
 
 
-stripe.api_key = "sk_test_51RP84y2YuXttkrNbFOBBvH5l6ZQU2tqS3AfA6qGzovQ56yOyLAzVvFxjp8JZazbu9IndbIeR6XyQL3jXGwsiYzBQ00StrGQ1fC"  # ⬅️ вставь свой SECRET KEY
-DOMAIN = "https://leadgen-app-w8bo.onrender.com"  # твой домен
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # вставь свой SECRET KEY в .env
+DOMAIN = os.getenv("DOMAIN")  # твой домен
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 
@@ -330,7 +335,7 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get("stripe-signature")
 
-    webhook_secret = "whsec_n7ekG7jJbeh2yh154SpUhGGJAD5kyeoS"  # вставь Stripe Webhook Secret
+       webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")  # вставь Stripe Webhook Secret
     event = None
 
     try:
