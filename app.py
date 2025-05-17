@@ -122,19 +122,6 @@ def get_google_results(keyword, location):
 
 # --- База данных
 
-def init_db():
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            plan TEXT DEFAULT 'free'
-        )
-    """)
-    conn.commit()
-    conn.close()
 
 def register_user(email, password):
     password_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -148,6 +135,18 @@ def register_user(email, password):
         return False
     finally:
         conn.close()
+        
+def get_request_limit():
+    user = get_current_user()
+    if not user:
+        return 0
+    plan = user["plan"]
+    return {
+        "free": 10,
+        "starter": 100,
+        "profi": float("inf")
+    }.get(plan, 0)
+
 
 def login_user(email, password):
     password_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -228,11 +227,19 @@ def dashboard():
     if request.method == "POST":
         error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
         return render_template(
-    "dashboard.html",
-    selected_plan=selected_plan,
-    user=user,
-    request_limit=get_request_limit()
-)
+            "dashboard.html",
+            selected_plan=selected_plan,
+            user=user,
+            request_limit=get_request_limit(),
+            error=error
+        ), 403
+
+    return render_template(
+        "dashboard.html",
+        selected_plan=selected_plan,
+        user=user,
+        request_limit=get_request_limit()
+    )
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
@@ -358,6 +365,10 @@ def stripe_webhook():
 @app.route("/success")
 def success():
     return "🎉 Zahlung erfolgreich! Tarif wird bald aktualisiert."
+
+ # Запуск инициализации базы при старте
+init_db()
+
 
 if __name__ != "__main__":
     gunicorn_app = app
