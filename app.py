@@ -326,8 +326,8 @@ def logout():
 @app.route("/subscribe/<plan>")
 def subscribe(plan):
     prices = {
-        "starter": "price_ТВОЙ_STARTER_ID",
-        "profi": "price_ТВОЙ_PROFI_ID"
+        "starter": "price_1RP8Ah2YuXttkrNbVuSRwuhu",
+        "profi": "price_1RP8Bw2YuXttkrNbZUPVMUUQ"
     }
     if plan not in prices:
         return "Ungültiger Plan", 400
