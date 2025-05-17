@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Suchverlauf</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>🔎 Dein Suchverlauf</h2>
+        <a href="/dashboard">← Zurück zum Dashboard</a>
+        <table border="1" cellpadding="8" cellspacing="0">
+            <tr>
+                <th>Keyword</th>
+                <th>Location</th>
+                <th>Zeitpunkt</th>
+            </tr>
+            {% for keyword, location, searched_at in records %}
+            <tr>
+                <td>{{ keyword }}</td>
+                <td>{{ location }}</td>
+                <td>{{ searched_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
