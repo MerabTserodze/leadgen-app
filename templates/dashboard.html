@@ -6,50 +6,120 @@
     <title>LeadGen Dashboard</title>
     <link rel="stylesheet" href="/static/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #1c1c1c;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .navbar ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .tarif-box {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .card-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        .error-message {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- SIMPLE NAVIGATION -->
+    <!-- NAVIGATION -->
     <div class="navbar">
-    <div class="logo">LeadGen</div>
-    <ul>
-        <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/emails">E-Mail-Suche</a></li>
-        <li><a href="/send">E-Mail-Versand</a></li>
-        <li><a href="/preise">Tarife</a></li>
-        <li><a href="/logout">Logout</a></li>
-    </ul>
-</div>
+        <div class="logo">LeadGen</div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/emails">E-Mail-Suche</a></li>
+            <li><a href="/send">E-Mail-Versand</a></li>
+            <li><a href="/preise">Tarife</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
 
-    <!-- DASHBOARD METRICS -->
     <div class="container">
         <h2>Willkommen zurück!</h2>
+
         {% if error %}
-    <div style="color: red; margin: 10px 0;">{{ error }}</div>
-{% endif %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
 
-        <!-- 🔽 ТАРИФНЫЙ ПЛАН (новое) -->
-        <div class="card" style="padding: 20px; margin-bottom: 20px;">
-            <h3>🔐 Wähle deinen Plan</h3>
-            <form method="POST">
-                <label>
-                    <input type="radio" name="plan" value="free" {% if selected_plan == 'free' %}checked{% endif %}>
-                    Free (bis zu 10 E-Mails)
-                </label><br>
-                <label>
-                    <input type="radio" name="plan" value="starter" {% if selected_plan == 'starter' %}checked{% endif %}>
-                    Starter (bis zu 50 E-Mails)
-                </label><br>
-                <label>
-                    <input type="radio" name="plan" value="profi" {% if selected_plan == 'profi' %}checked{% endif %}>
-                    Profi (unbegrenzt)
-                </label><br><br>
-                <button type="submit">Plan speichern</button>
-            </form>
-            <p>Aktueller Plan: <strong>{{ selected_plan|capitalize }}</strong></p>
+        <!-- ТАРИФ -->
+        <div class="tarif-box">
+            <h3>🔐 Dein aktueller Plan</h3>
+            <p style="font-size: 18px;"><strong>{{ selected_plan|capitalize }}</strong></p>
+            <p>Für Tarifwechsel besuche bitte die <a href="/preise">Tarif-Seite</a>.</p>
         </div>
-        <!-- 🔼 КОНЕЦ ДОБАВЛЕННОГО -->
 
+        <!-- КАРТОЧКИ -->
         <div class="dashboard-grid">
             <div class="card">
                 <div class="card-title">Generierte Leads</div>
@@ -69,14 +139,13 @@
             </div>
         </div>
 
-        <!-- CHART -->
+        <!-- ДИАГРАММА -->
         <div class="chart-container">
             <h2>Lead-Performance</h2>
             <canvas id="statsChart" width="400" height="200"></canvas>
         </div>
     </div>
 
-    <!-- CHART SCRIPT -->
     <script>
         const ctx = document.getElementById('statsChart').getContext('2d');
         const statsChart = new Chart(ctx, {
