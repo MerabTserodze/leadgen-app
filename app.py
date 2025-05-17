@@ -211,13 +211,14 @@ def register():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
+        
     if register_user(email, password):
-    send_email(
-        to_email=email,
-        subject="Willkommen bei LeadGen",
-        content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
-    )
-    return redirect("/login")
+        send_email(
+            to_email=email,
+            subject="Willkommen bei LeadGen",
+            content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
+        )
+        return redirect("/login")
 
 
 
