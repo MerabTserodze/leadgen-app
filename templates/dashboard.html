@@ -109,6 +109,10 @@
   <h3>📊 Anfragen</h3>
   <p>Verwendet: <strong>{{ user.requests_used }}</strong> von <strong>{{ request_limit }}</strong></p>
  </div>
+ <div class="card" style="margin-top: 20px;">
+    <h3>📊 Deine Nutzung</h3>
+    <p><strong>Genutzte Anfragen:</strong> {{ user.requests_used }} / {{ request_limit if request_limit != float('inf') else "∞" }}</p>
+</div>
 
 
     <div class="container">
