@@ -166,10 +166,15 @@ def get_current_user():
         return None
     conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT id, email, plan FROM users WHERE id=?", (user_id,))
+    cur.execute("SELECT id, email, plan, requests_used FROM users WHERE id=?", (user_id,))
     user = cur.fetchone()
     conn.close()
-    return {"id": user[0], "email": user[1], "plan": user[2]} if user else None
+    return {
+        "id": user[0],
+        "email": user[1],
+        "plan": user[2],
+        "requests_used": user[3]
+    } if user else None
 
 def init_db():
     conn = sqlite3.connect(DATABASE_PATH)
