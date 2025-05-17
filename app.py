@@ -1,32 +1,63 @@
 from flask import Flask, render_template, request, redirect, send_file, session, jsonify
 from dotenv import load_dotenv
 from io import BytesIO
-import json
-import sqlite3
 import hashlib
 import dns.resolver
 import openpyxl
 import re
 import asyncio
-from urllib.parse import urljoin, urlparse
 import aiohttp
 import requests
 import stripe
 import os
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exc import IntegrityError
 
+# --- Загрузка настроек
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 DOMAIN = os.getenv("DOMAIN")
-DATABASE_PATH = os.getenv("DATABASE_PATH", "leadgen.db")
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = scoped_session(sessionmaker(bind=engine))
+Base = declarative_base()
+
+# --- SQLAlchemy модели
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+    plan = Column(String, default="free")
+    requests_used = Column(Integer, default=0)
+
+class SeenEmail(Base):
+    __tablename__ = "seen_emails"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String)
+
+class History(Base):
+    __tablename__ = "history"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    keyword = Column(String)
+    location = Column(String)
+    searched_at = Column(DateTime, default=datetime.utcnow)
+
+Base.metadata.create_all(bind=engine)
+
+# --- Утилиты
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 EXCLUDE_DOMAINS = ["sentry.io", "wixpress.com", "cloudflare", "example.com", "no-reply", "noreply", "localhost", "wordpress.com"]
-
-# --- Утилиты
 
 def has_mx_record(domain):
     try:
@@ -62,8 +93,7 @@ async def extract_emails_from_url_async(urls):
             collected_emails.update(emails)
     return list(collected_emails)
 
-
-# --- Поисковые функции
+# --- Поиск
 
 def get_maps_results(keyword, location, radius_km=10):
     params = {
@@ -81,8 +111,7 @@ def get_maps_results(keyword, location, radius_km=10):
     try:
         response = requests.get("https://serpapi.com/search", params=params)
         data = response.json()
-        results = data.get("local_results", [])
-        return [place.get("website") for place in results if place.get("website")]
+        return [place.get("website") for place in data.get("local_results", []) if place.get("website")]
     except Exception as e:
         print("❌ Fehler bei get_maps_results:", e)
         return []
@@ -102,140 +131,62 @@ def get_google_results(keyword, location):
     try:
         response = requests.get("https://serpapi.com/search", params=params)
         data = response.json()
-        urls = []
-        for result in data.get("organic_results", []):
-            link = result.get("link", "")
-            if not any(x in link for x in ["facebook.com", "youtube.com", "tripadvisor.com"]):
-                urls.append(link)
+        urls = [r.get("link") for r in data.get("organic_results", []) if r.get("link") and not any(x in r.get("link") for x in ["facebook.com", "youtube.com", "tripadvisor.com"])]
         return urls
     except Exception as e:
         print("❌ Fehler bei get_google_results:", e)
         return []
 
-# --- База данных
-
+# --- Аутентификация
 
 def register_user(email, password):
+    db = SessionLocal()
     password_hash = hashlib.sha256(password.encode()).hexdigest()
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
     try:
-        cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password_hash))
-        conn.commit()
+        user = User(email=email, password=password_hash)
+        db.add(user)
+        db.commit()
         return True
-    except:
+    except IntegrityError:
+        db.rollback()
         return False
     finally:
-        conn.close()
-        
-
+        db.close()
 
 def login_user(email, password):
+    db = SessionLocal()
     password_hash = hashlib.sha256(password.encode()).hexdigest()
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE email=? AND password=?", (email, password_hash))
-    user = cur.fetchone()
-    conn.close()
+    user = db.query(User).filter_by(email=email, password=password_hash).first()
+    db.close()
     if user:
-        session["user_id"] = user[0]
+        session["user_id"] = user.id
         return True
     return False
-
-
 
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
-        return None  # ✅ Возвращаем None, а не redirect (это делает вызывающий код)
+        return None
+    db = SessionLocal()
+    user = db.query(User).filter_by(id=user_id).first()
+    db.close()
+    return user
 
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-    cur.execute("SELECT id, email, plan, requests_used FROM users WHERE id=?", (user_id,))
-    user = cur.fetchone()
-    conn.close()
-    return {
-        "id": user[0],
-        "email": user[1],
-        "plan": user[2],
-        "requests_used": user[3]
-    } if user else None
-    
 def get_user_limits():
     user = get_current_user()
     if not user:
         return {"requests": 0, "emails": 0}
-    plan = user["plan"]
     limits = {
         "free": {"requests": 3, "emails": 10},
         "starter": {"requests": 30, "emails": 30},
         "profi": {"requests": 80, "emails": 50}
     }
-    return limits.get(plan, {"requests": 0, "emails": 0})
+    return limits.get(user.plan, {"requests": 0, "emails": 0})
 
-    
-def init_db():
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            plan TEXT DEFAULT 'free',
-            requests_used INTEGER DEFAULT 0
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS seen_emails (
-            user_id INTEGER,
-            email TEXT
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            keyword TEXT,
-            location TEXT,
-            searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# --- Роуты
-@app.route("/history")
-def history():
-    user = get_current_user()
-    if not user:
-        return redirect("/login")
-
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT keyword, location, searched_at FROM history WHERE user_id = ? ORDER BY searched_at DESC LIMIT 50",
-        (user["id"],)
-    )
-    records = cur.fetchall()
-    conn.close()
-
-    return render_template("history.html", records=records)
-
-
+# --- Маршруты
 @app.route("/")
 def homepage():
     return render_template("home.html")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        if login_user(email, password):
-            return redirect("/dashboard")
-        return "Fehler: Ungültige Zugangsdaten."
-    return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -247,25 +198,30 @@ def register():
         return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        if login_user(email, password):
+            return redirect("/dashboard")
+        return "Fehler: Ungültige Zugangsdaten."
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
 @app.route("/dashboard")
 def dashboard():
     user = get_current_user()
     if not user:
         return redirect("/login")
-
     limits = get_user_limits()
-    remaining = max(limits["requests"] - user["requests_used"], 0)
+    remaining = max(limits["requests"] - user.requests_used, 0)
+    return render_template("dashboard.html", selected_plan=user.plan, user=user, request_limit=limits["requests"], request_limit_display=limits["requests"], requests_remaining=remaining, is_unlimited=False)
 
-    return render_template("dashboard.html",
-        selected_plan=user["plan"],
-        user=user,
-        request_limit=limits["requests"],
-        request_limit_display=limits["requests"],
-        requests_remaining=remaining,
-        is_unlimited=False
-    )
-
-    
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
@@ -276,63 +232,33 @@ def emails():
     user = get_current_user()
     if not user:
         return redirect("/login")
-
     limits = get_user_limits()
     max_requests = limits["requests"]
     max_emails = limits["emails"]
-
+    db = SessionLocal()
     if request.method == "POST":
-        try:
-            # Проверка лимита запросов
-            if user["requests_used"] >= max_requests:
-                return "❌ Du hast dein Anfrage-Limit erreicht."
-
-            keyword = request.form.get("keyword", "").strip()
-            location = request.form.get("location", "").strip()
-            radius_km = int(request.form.get("radius", 10))
-
-            # Получение URLов из Maps + Google
-            maps_urls = get_maps_results(keyword, location, radius_km)
-            google_urls = get_google_results(keyword, location)
-            urls = list(set(maps_urls + google_urls))
-
-            # Фильтрация плохих ссылок
-            urls = [
-                url for url in urls
-                if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
-            ]
-            urls = urls[:50]
-
-            # Извлечение email'ов
-            all_emails = asyncio.run(extract_emails_from_url_async(urls))
-            valid_emails = [e for e in all_emails if is_valid_email(e)]
-
-            # Получение уже показанных email'ов
-            conn = sqlite3.connect(DATABASE_PATH)
-            cur = conn.cursor()
-            cur.execute("SELECT email FROM seen_emails WHERE user_id = ?", (user["id"],))
-            seen = set(row[0] for row in cur.fetchall())
-
-            # Исключение дубликатов
-            fresh_emails = [e for e in valid_emails if e not in seen]
-            results = list(set(fresh_emails))[:max_emails]
-            session["emails"] = results
-
-            # Сохранение показанных email'ов
-            for email in results:
-                cur.execute("INSERT INTO seen_emails (user_id, email) VALUES (?, ?)", (user["id"], email))
-
-            # Обновление счетчика запросов и история
-            cur.execute("UPDATE users SET requests_used = requests_used + 1 WHERE id = ?", (user["id"],))
-            cur.execute("INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)", (user["id"], keyword, location))
-            conn.commit()
-            conn.close()
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
-
+        if user.requests_used >= max_requests:
+            return "❌ Du hast dein Anfrage-Limit erreicht."
+        keyword = request.form.get("keyword", "").strip()
+        location = request.form.get("location", "").strip()
+        radius_km = int(request.form.get("radius", 10))
+        maps_urls = get_maps_results(keyword, location, radius_km)
+        google_urls = get_google_results(keyword, location)
+        urls = list(set(maps_urls + google_urls))
+        urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
+        urls = urls[:50]
+        all_emails = asyncio.run(extract_emails_from_url_async(urls))
+        valid_emails = [e for e in all_emails if is_valid_email(e)]
+        seen = {row.email for row in db.query(SeenEmail).filter_by(user_id=user.id).all()}
+        fresh_emails = [e for e in valid_emails if e not in seen]
+        results = list(set(fresh_emails))[:max_emails]
+        session["emails"] = results
+        for email in results:
+            db.add(SeenEmail(user_id=user.id, email=email))
+        user.requests_used += 1
+        db.add(History(user_id=user.id, keyword=keyword, location=location))
+        db.commit()
+    db.close()
     return render_template("emails.html", results=results)
 
 @app.route("/export")
@@ -350,15 +276,6 @@ def export():
     wb.save(output)
     output.seek(0)
     return send_file(output, download_name="emails.xlsx", as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-@app.route("/send")
-def send():
-    return render_template("send.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
 
 @app.route("/subscribe/<plan>")
 def subscribe(plan):
@@ -391,24 +308,17 @@ def stripe_webhook():
         session_data = event["data"]["object"]
         plan = session_data["metadata"].get("plan")
         user_id = session_data["metadata"].get("user_id")
-        if plan and user_id:
-            conn = sqlite3.connect(DATABASE_PATH)
-            cur = conn.cursor()
-            cur.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
-            conn.commit()
-            conn.close()
+        db = SessionLocal()
+        user = db.query(User).filter_by(id=user_id).first()
+        if user and plan:
+            user.plan = plan
+            db.commit()
+        db.close()
     return jsonify({"status": "success"}), 200
 
 @app.route("/success")
 def success():
     return "🎉 Zahlung erfolgreich! Tarif wird bald aktualisiert."
-
- # Запуск инициализации базы при старте
-init_db()
-
-
-if __name__ != "__main__":
-    gunicorn_app = app
 
 if __name__ == "__main__":
     app.run(debug=True)
