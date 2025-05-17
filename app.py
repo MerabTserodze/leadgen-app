@@ -164,7 +164,7 @@ def dashboard():
 
     selected_plan = user["plan"]
 
-   if request.method == "POST":
+    if request.method == "POST":
     error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
     return render_template("dashboard.html", selected_plan=selected_plan, error=error), 403
 
