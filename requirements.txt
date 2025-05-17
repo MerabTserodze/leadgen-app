@@ -9,3 +9,5 @@ SQLAlchemy
 psycopg2-binary
 gunicorn
 bcrypt
+celery
+redis
