@@ -256,14 +256,23 @@ def dashboard():
     user = get_current_user()
     if not user:
         return redirect("/login")
+
     selected_plan = user["plan"]
+    limit = get_request_limit()
+    limit_display = "∞" if limit == float("inf") else limit
+    remaining = "∞" if limit == float("inf") else max(limit - user["requests_used"], 0)
+    is_unlimited = (limit == float("inf"))
+
     if request.method == "POST":
         error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
         return render_template(
             "dashboard.html",
             selected_plan=selected_plan,
             user=user,
-            request_limit=get_request_limit(),
+            request_limit=limit,
+            request_limit_display=limit_display,
+            requests_remaining=remaining,
+            is_unlimited=is_unlimited,
             error=error
         ), 403
 
@@ -271,7 +280,12 @@ def dashboard():
         "dashboard.html",
         selected_plan=selected_plan,
         user=user,
-        request_limit=get_request_limit()
+        request_limit=limit,
+        request_limit_display=limit_display,
+        requests_remaining=remaining,
+        is_unlimited=is_unlimited
+    )
+
     )
 @app.route("/preise")
 def preise():
