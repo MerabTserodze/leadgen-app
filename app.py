@@ -41,6 +41,7 @@ class User(Base):
     password = Column(String, nullable=False)
     plan = Column(String, default="free")
     requests_used = Column(Integer, default=0)
+    is_admin = Column(Integer, default=0)
 
 class SeenEmail(Base):
     __tablename__ = "seen_emails"
@@ -57,6 +58,11 @@ class History(Base):
     searched_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+with engine.connect() as conn:
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;")
+    except Exception as e:
+        print("ℹ️ Поле is_admin уже существует или ошибка:", e)
 
 # --- Утилиты
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
