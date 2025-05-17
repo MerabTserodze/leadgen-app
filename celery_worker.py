@@ -1,9 +1,4 @@
-from celery import Celery
-import os
+from tasks import celery
 
-celery = Celery(
-    "leadgen",
-    broker=os.getenv("REDIS_URL"),
-    backend=os.getenv("REDIS_URL"),
-    include=["tasks"]
-)
+if __name__ == "__main__":
+    celery.start()
