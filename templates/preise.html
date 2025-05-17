@@ -1,79 +1,137 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tarife – LeadGen</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #1c1c1c;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .navbar ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .preise-container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .preise-container h2 {
+            font-size: 32px;
+            margin-bottom: 40px;
+        }
+
+        .tarif-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .tarif-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 280px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .tarif-card h3 {
+            margin-bottom: 15px;
+        }
+
+        .tarif-card p {
+            margin: 10px 0;
+            font-size: 15px;
+        }
+
+        .tarif-card button {
+            margin-top: 15px;
+            padding: 12px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .tarif-card button[disabled] {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .tarif-card a {
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
 
     <!-- 🔝 НАВИГАЦИЯ -->
     <div class="navbar">
-    <div class="logo">LeadGen</div>
-    <ul>
-        <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="/emails">E-Mail-Suche</a></li>
-        <li><a href="/send">E-Mail-Versand</a></li>
-        <li><a href="/preise">Tarife</a></li>
-        <li><a href="/logout">Logout</a></li>
-    </ul>
-</div>
-
- <div class="card">
-    <div class="card-title">Aktueller Tarif</div>
-    <form method="POST" action="/dashboard">
-        <select name="plan" class="form-input">
-            <option value="free">Kostenlos</option>
-            <option value="starter">Starter – 29€/Monat</option>
-            <option value="profi">Profi – 69€/Monat</option>
-        </select>
-        <button type="submit" class="btn" style="margin-top: 10px;">Tarif wählen</button>
-    </form>
- </div>
+        <div class="logo">LeadGen</div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/emails">E-Mail-Suche</a></li>
+            <li><a href="/send">E-Mail-Versand</a></li>
+            <li><a href="/preise">Tarife</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
 
     <!-- 💳 ТАРИФЫ -->
     <div class="preise-container">
         <h2>Unsere Tarife</h2>
+
         <div class="tarif-grid">
-
-            <!-- Kostenlos -->
-            <div class="tarif">
-                <h2>Kostenlos</h2>
-                <div class="preis">0€ / Monat</div>
-                <ul>
-                    <li>10 Suchanfragen / Monat</li>
-                    <li>Einfacher Zugang</li>
-                    <li>Manuelle E-Mail-Kopie</li>
-                </ul>
-                <a href="/register" class="button">Kostenlos starten</a>
+            <div class="tarif-card">
+                <h3>Free</h3>
+                <p>Bis zu 10 E-Mails</p>
+                <p><strong>0€ / Monat</strong></p>
+                <button disabled>Aktiv</button>
             </div>
 
-            <!-- Starter -->
-            <div class="tarif">
-                <h2>Starter</h2>
-                <div class="preis">29€ / Monat</div>
-                <ul>
-                    <li>Bis zu 100 Suchanfragen</li>
-                    <li>Grundfunktionen</li>
-                    <li>Limitierte E-Mail-Generierung</li>
-                </ul>
-                <a href="/register" class="button">Jetzt starten</a>
+            <div class="tarif-card">
+                <h3>Starter</h3>
+                <p>Bis zu 50 E-Mails pro Monat</p>
+                <p><strong>5€ / Monat</strong></p>
+                <a href="/subscribe/starter"><button>Abonnieren</button></a>
             </div>
 
-            <!-- Profi -->
-            <div class="tarif">
-                <h2>Profi</h2>
-                <div class="preis">69€ / Monat</div>
-                <ul>
-                    <li>Unbegrenzte Suchanfragen</li>
-                    <li>Voller Funktionsumfang</li>
-                    <li>E-Mail-Automation & Templates</li>
-                    <li>Statistiken und CSV-Export</li>
-                </ul>
-                <a href="/register" class="button alt">Profi werden</a>
+            <div class="tarif-card">
+                <h3>Profi</h3>
+                <p>Unbegrenzte E-Mails</p>
+                <p><strong>12€ / Monat</strong></p>
+                <a href="/subscribe/profi"><button>Abonnieren</button></a>
             </div>
-
         </div>
     </div>
 
