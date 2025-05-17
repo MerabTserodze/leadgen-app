@@ -4,20 +4,59 @@
     <meta charset="UTF-8">
     <title>Login</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .form-box {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        p {
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <div class="form-box">
         <h2>🔐 Login</h2>
         <form method="POST">
-            <label for="email">E-Mail:</label><br>
-            <input type="email" name="email" required><br><br>
-
-            <label for="password">Passwort:</label><br>
-            <input type="password" name="password" required><br><br>
-
-            <button type="submit">Login</button>
+            <input type="email" name="email" placeholder="E-Mail-Adresse" required>
+            <input type="password" name="password" placeholder="Passwort" required>
+            <button type="submit">Einloggen</button>
         </form>
-        <p>Kein Account? <a href="/register">Jetzt registrieren</a></p>
+        <p>Noch kein Konto? <a href="/register">Jetzt registrieren</a></p>
     </div>
 </body>
 </html>
