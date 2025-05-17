@@ -213,17 +213,16 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
         
-    if register_user(email, password):
-        send_email(
-            to_email=email,
-            subject="Willkommen bei LeadGen",
-            content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
-        )
-        return redirect("/login")
-
-
-
-        return "Fehler: Registrierung fehlgeschlagen."
+        if register_user(email, password):
+            send_email(
+                to_email=email,
+                subject="Willkommen bei LeadGen",
+                content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
+            )
+            return redirect("/login")
+        else:
+            return "Fehler: Registrierung fehlgeschlagen."
+            
     return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -280,7 +279,17 @@ def emails():
         seen = {row.email for row in db.query(SeenEmail).filter_by(user_id=user.id).all()}
         fresh_emails = [e for e in valid_emails if e not in seen]
         results = list(set(fresh_emails))[:max_emails]
-        session["emails"] = results
+        collect_and_send_emails.delay(user.email, urls, max_emails)
+
+        for email in results:
+            db.add(SeenEmail(user_id=user.id, email=email))
+
+        user.requests_used += 1
+        db.add(History(user_id=user.id, keyword=keyword, location=location))
+        db.commit()
+        db.close()
+
+        return "✅ Deine Anfrage wird im Hintergrund verarbeitet."
         for email in results:
             db.add(SeenEmail(user_id=user.id, email=email))
         user.requests_used += 1
