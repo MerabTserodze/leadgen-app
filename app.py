@@ -12,6 +12,7 @@ import stripe
 import os
 import bcrypt
 import smtplib
+from tasks import collect_and_send_emails
 from email.message import EmailMessage
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
