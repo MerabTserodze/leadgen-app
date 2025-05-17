@@ -172,7 +172,26 @@ def get_current_user():
     conn.close()
     return {"id": user[0], "email": user[1], "plan": user[2]} if user else None
 
-init_db()
+def init_db():
+    conn = sqlite3.connect(DATABASE_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            plan TEXT DEFAULT 'free',
+            requests_used INTEGER DEFAULT 0
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS seen_emails (
+            user_id INTEGER,
+            email TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 # --- Роуты
 
@@ -208,9 +227,12 @@ def dashboard():
     selected_plan = user["plan"]
     if request.method == "POST":
         error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
-        return render_template("dashboard.html", selected_plan=selected_plan, error=error), 403
-    return render_template("dashboard.html", selected_plan=selected_plan)
-
+        return render_template(
+    "dashboard.html",
+    selected_plan=selected_plan,
+    user=user,
+    request_limit=get_request_limit()
+)
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
@@ -224,12 +246,13 @@ def emails():
 
     if request.method == "POST":
         try:
+            # Проверка лимита
+            if user["requests_used"] >= get_request_limit():
+                return "❌ Du hast dein Anfrage-Limit erreicht."
+
             keyword = request.form.get("keyword")
             location = request.form.get("location")
             radius_km = int(request.form.get("radius", 10))
-
-            if user["plan"] == "free":
-                return "❌ Dein Plan erlaubt keine E-Mail-Suche. Bitte upgraden."
 
             maps_urls = get_maps_results(keyword, location, radius_km)
             google_urls = get_google_results(keyword, location)
@@ -239,13 +262,34 @@ def emails():
 
             all_emails = asyncio.run(extract_emails_from_url_async(urls))
             valid_emails = [e for e in all_emails if is_valid_email(e)]
-            results = list(set(valid_emails))[:get_email_limit()]
+
+            # Извлекаем уже показанные email'ы
+            conn = sqlite3.connect(DATABASE_PATH)
+            cur = conn.cursor()
+            cur.execute("SELECT email FROM seen_emails WHERE user_id = ?", (user["id"],))
+            seen = set(row[0] for row in cur.fetchall())
+
+            # Убираем дубликаты
+            fresh_emails = [e for e in valid_emails if e not in seen]
+            results = list(set(fresh_emails))[:get_email_limit()]
             session["emails"] = results
+
+            # Сохраняем выданные email'ы
+            for email in results:
+                cur.execute("INSERT INTO seen_emails (user_id, email) VALUES (?, ?)", (user["id"], email))
+
+            # Увеличиваем счётчик запросов
+            cur.execute("UPDATE users SET requests_used = requests_used + 1 WHERE id = ?", (user["id"],))
+            conn.commit()
+            conn.close()
+
         except Exception as e:
             import traceback
             traceback.print_exc()
             return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
+
     return render_template("emails.html", results=results)
+
 
 @app.route("/export")
 def export():
