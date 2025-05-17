@@ -11,6 +11,8 @@ import requests
 import stripe
 import os
 import bcrypt
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -65,6 +67,22 @@ def has_mx_record(domain):
         return len(dns.resolver.resolve(domain, "MX")) > 0
     except:
         return False
+        
+def send_email(to_email, subject, content):
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = os.getenv("SMTP_USER")
+    msg["To"] = to_email
+    msg.set_content(content)
+
+    try:
+        with smtplib.SMTP(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT"))) as server:
+            server.starttls()
+            server.login(os.getenv("SMTP_USER"), os.getenv("SMTP_PASS"))
+            server.send_message(msg)
+    except Exception as e:
+        print("❌ Fehler beim Senden der E-Mail:", e)
+
 
 def is_valid_email(email):
     email = email.lower()
@@ -194,7 +212,12 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
         if register_user(email, password):
-            return redirect("/login")
+    send_email(
+        to_email=email,
+        subject="Willkommen bei LeadGen",
+        content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
+    )
+    return redirect("/login")
         return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
 
