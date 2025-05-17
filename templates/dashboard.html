@@ -87,8 +87,22 @@
 
         .error-message {
             color: red;
-            margin-bottom: 15px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
         }
+
+        progress {
+            width: 100%;
+            height: 20px;
+        }
+
+        .progress-wrapper {
+            margin: 15px auto;
+            max-width: 300px;
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
@@ -106,27 +120,40 @@
         </ul>
     </div>
 
- <div class="card" style="margin-top: 20px;">
-    <h3>📊 Deine Nutzung</h3>
-    <p><strong>Genutzte Anfragen:</strong> {{ user.requests_used }} / {{ request_limit if request_limit != float('inf') else "∞" }}</p>
-</div>
-
-
     <div class="container">
         <h2>Willkommen zurück!</h2>
 
+        <!-- ❗ПРЕДУПРЕЖДЕНИЕ О ЛИМИТЕ -->
+        {% if request_limit != float('inf') and user.requests_used >= request_limit - 2 %}
+        <div class="error-message">⚠️ Du hast fast dein Anfrage-Limit erreicht!</div>
+        {% endif %}
+
+        <!-- Ошибки -->
         {% if error %}
         <div class="error-message">{{ error }}</div>
         {% endif %}
 
-        <!-- ТАРИФ -->
+        <!-- 🔐 ТАРИФ -->
         <div class="tarif-box">
             <h3>🔐 Dein aktueller Plan</h3>
             <p style="font-size: 18px;"><strong>{{ selected_plan|capitalize }}</strong></p>
             <p>Für Tarifwechsel besuche bitte die <a href="/preise">Tarif-Seite</a>.</p>
         </div>
 
-        <!-- КАРТОЧКИ -->
+        <!-- 📊 ИНФО О ЛИМИТЕ -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>📊 Deine Nutzung</h3>
+            <p><strong>Genutzte Anfragen:</strong> {{ user.requests_used }} / {{ request_limit if request_limit != float('inf') else "∞" }}</p>
+        </div>
+
+        {% if request_limit != float('inf') %}
+        <div class="progress-wrapper">
+            <progress value="{{ user.requests_used }}" max="{{ request_limit }}"></progress>
+            <p>Verbleibend: {{ request_limit - user.requests_used }} Anfragen</p>
+        </div>
+        {% endif %}
+
+        <!-- 📦 КАРТОЧКИ -->
         <div class="dashboard-grid">
             <div class="card">
                 <div class="card-title">Generierte Leads</div>
@@ -146,7 +173,7 @@
             </div>
         </div>
 
-        <!-- ДИАГРАММА -->
+        <!-- 📈 ДИАГРАММА -->
         <div class="chart-container">
             <h2>Lead-Performance</h2>
             <canvas id="statsChart" width="400" height="200"></canvas>
