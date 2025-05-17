@@ -1,14 +1,79 @@
-from celery_worker import celery
-from app import extract_emails_from_url_async, is_valid_email, send_email
+import os
+import re
 import asyncio
+import aiohttp
+import openpyxl
+from io import BytesIO
+from redis import Redis
+from celery import Celery
+from dotenv import load_dotenv
+from email.message import EmailMessage
+import smtplib
+
+load_dotenv()
+
+# Настройки Redis
+REDIS_URL = os.getenv("REDIS_URL")
+celery = Celery("tasks", broker=REDIS_URL)
+
+EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "no-reply", "noreply"]
+
+async def fetch_html(session, url):
+    try:
+        async with session.get(url, timeout=10) as response:
+            return await response.text()
+    except:
+        return ""
+
+async def extract_emails(urls):
+    emails = set()
+    headers = {"User-Agent": "Mozilla/5.0"}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        htmls = await asyncio.gather(*(fetch_html(session, url) for url in urls))
+        for html in htmls:
+            found = re.findall(EMAIL_REGEX, html)
+            for email in found:
+                if not any(bad in email for bad in EXCLUDE_DOMAINS):
+                    emails.add(email)
+    return list(emails)
+
+def send_email(to_email, subject, body, attachment=None):
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = os.getenv("SMTP_USER")
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    if attachment:
+        msg.add_attachment(attachment.getvalue(), maintype="application",
+                           subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                           filename="emails.xlsx")
+
+    with smtplib.SMTP(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT"))) as server:
+        server.starttls()
+        server.login(os.getenv("SMTP_USER"), os.getenv("SMTP_PASS"))
+        server.send_message(msg)
 
 @celery.task
-def collect_and_send_emails(user_email, urls, max_emails):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    all_emails = loop.run_until_complete(extract_emails_from_url_async(urls))
-    valid = [e for e in all_emails if is_valid_email(e)]
-    final_emails = valid[:max_emails]
+def collect_and_send_emails(user_email, urls, max_count):
+    emails = asyncio.run(extract_emails(urls))
+    selected = emails[:max_count]
 
-    result_text = "\n".join(final_emails) if final_emails else "Keine gültigen E-Mails gefunden."
-    send_email(user_email, "🎯 Deine LeadGen-Ergebnisse", result_text)
+    # Сохраняем в Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Emails"
+    ws.append(["E-Mail"])
+    for e in selected:
+        ws.append([e])
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    send_email(
+        to_email=user_email,
+        subject="🎯 LeadGen Ergebnis",
+        body="Hier sind die gefundenen E-Mails. Viel Erfolg!",
+        attachment=output
+    )
