@@ -87,8 +87,13 @@
 
         .error-message {
             color: red;
-            margin: 15px 0;
-            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .progress-wrapper {
+            margin: 10px auto;
+            max-width: 300px;
             text-align: center;
         }
 
@@ -96,114 +101,100 @@
             width: 100%;
             height: 20px;
         }
-
-        .progress-wrapper {
-            margin: 15px auto;
-            max-width: 300px;
-            text-align: center;
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- NAVIGATION -->
-    <div class="navbar">
-        <div class="logo">LeadGen</div>
-        <ul>
-            <li><a href="/history">Verlauf</a></li>
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li><a href="/emails">E-Mail-Suche</a></li>
-            <li><a href="/send">E-Mail-Versand</a></li>
-            <li><a href="/preise">Tarife</a></li>
-            <li><a href="/logout">Logout</a></li>
-        </ul>
+<div class="navbar">
+    <div class="logo">LeadGen</div>
+    <ul>
+        <li><a href="/history">Verlauf</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/emails">E-Mail-Suche</a></li>
+        <li><a href="/send">E-Mail-Versand</a></li>
+        <li><a href="/preise">Tarife</a></li>
+        <li><a href="/logout">Logout</a></li>
+    </ul>
+</div>
+
+<div class="container">
+    <h2>Willkommen zurück!</h2>
+
+    {% if not is_unlimited and user.requests_used >= request_limit - 2 %}
+    <div class="error-message">⚠️ Du hast fast dein Anfrage-Limit erreicht!</div>
+    {% endif %}
+
+    {% if error %}
+    <div class="error-message">{{ error }}</div>
+    {% endif %}
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>📊 Deine Nutzung</h3>
+        <p><strong>Genutzte Anfragen:</strong> {{ user.requests_used }} / {{ request_limit_display }}</p>
     </div>
 
-    <div class="container">
-        <h2>Willkommen zurück!</h2>
+    {% if not is_unlimited %}
+    <div class="progress-wrapper">
+        <progress value="{{ user.requests_used }}" max="{{ request_limit }}"></progress>
+        <p>Verbleibend: {{ requests_remaining }} Anfragen</p>
+    </div>
+    {% endif %}
 
-        <!-- ❗ПРЕДУПРЕЖДЕНИЕ О ЛИМИТЕ -->
-        {% if request_limit != float('inf') and user.requests_used >= request_limit - 2 %}
-        <div class="error-message">⚠️ Du hast fast dein Anfrage-Limit erreicht!</div>
-        {% endif %}
+    <div class="tarif-box">
+        <h3>🔐 Dein aktueller Plan</h3>
+        <p style="font-size: 18px;"><strong>{{ selected_plan|capitalize }}</strong></p>
+        <p>Für Tarifwechsel besuche bitte die <a href="/preise">Tarif-Seite</a>.</p>
+    </div>
 
-        <!-- Ошибки -->
-        {% if error %}
-        <div class="error-message">{{ error }}</div>
-        {% endif %}
-
-        <!-- 🔐 ТАРИФ -->
-        <div class="tarif-box">
-            <h3>🔐 Dein aktueller Plan</h3>
-            <p style="font-size: 18px;"><strong>{{ selected_plan|capitalize }}</strong></p>
-            <p>Für Tarifwechsel besuche bitte die <a href="/preise">Tarif-Seite</a>.</p>
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-title">Generierte Leads</div>
+            <div class="card-value">1.240</div>
         </div>
-
-        <!-- 📊 ИНФО О ЛИМИТЕ -->
-        <div class="card" style="margin-top: 20px;">
-            <h3>📊 Deine Nutzung</h3>
-            <p><strong>Genutzte Anfragen:</strong> {{ user.requests_used }} / {{ request_limit if request_limit != float('inf') else "∞" }}</p>
+        <div class="card">
+            <div class="card-title">Gesendete E-Mails</div>
+            <div class="card-value">890</div>
         </div>
-
-        {% if request_limit != float('inf') %}
-        <div class="progress-wrapper">
-            <progress value="{{ user.requests_used }}" max="{{ request_limit }}"></progress>
-            <p>Verbleibend: {{ request_limit - user.requests_used }} Anfragen</p>
+        <div class="card">
+            <div class="card-title">Antwortquote</div>
+            <div class="card-value">15%</div>
         </div>
-        {% endif %}
-
-        <!-- 📦 КАРТОЧКИ -->
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="card-title">Generierte Leads</div>
-                <div class="card-value">1.240</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Gesendete E-Mails</div>
-                <div class="card-value">890</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Antwortquote</div>
-                <div class="card-value">15%</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Letzte Aktivität</div>
-                <div class="card-value">Heute, 08:45</div>
-            </div>
-        </div>
-
-        <!-- 📈 ДИАГРАММА -->
-        <div class="chart-container">
-            <h2>Lead-Performance</h2>
-            <canvas id="statsChart" width="400" height="200"></canvas>
+        <div class="card">
+            <div class="card-title">Letzte Aktivität</div>
+            <div class="card-value">Heute, 08:45</div>
         </div>
     </div>
 
-    <script>
-        const ctx = document.getElementById('statsChart').getContext('2d');
-        const statsChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr'],
-                datasets: [{
-                    label: 'Neue Leads',
-                    data: [12, 19, 14, 22, 17],
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+    <div class="chart-container">
+        <h2>Lead-Performance</h2>
+        <canvas id="statsChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const statsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr'],
+            datasets: [{
+                label: 'Neue Leads',
+                data: [12, 19, 14, 22, 17],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-    </script>
+        }
+    });
+</script>
 
 </body>
 </html>
