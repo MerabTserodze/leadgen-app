@@ -24,6 +24,9 @@
     <!-- DASHBOARD METRICS -->
     <div class="container">
         <h2>Willkommen zurück!</h2>
+        {% if error %}
+    <div style="color: red; margin: 10px 0;">{{ error }}</div>
+{% endif %}
 
         <!-- 🔽 ТАРИФНЫЙ ПЛАН (новое) -->
         <div class="card" style="padding: 20px; margin-bottom: 20px;">
