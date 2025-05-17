@@ -64,12 +64,14 @@ async def extract_emails_from_url_async(urls):
 
 def get_email_limit():
     user = get_current_user()
-    if not user: return 0
-    if user["plan"] == "starter":
-        return 50
-    elif user["plan"] == "profi":
-        return float("inf")
-    return 10
+    if not user:
+        return 0
+    plan = user["plan"]
+    return {
+        "free": 10,
+        "starter": 30,
+        "profi": 50
+    }.get(plan, 0)
 
 # --- Поисковые функции
 
@@ -142,9 +144,9 @@ def get_request_limit():
         return 0
     plan = user["plan"]
     return {
-        "free": 10,
-        "starter": 100,
-        "profi": float("inf")
+        "free": 3,
+        "starter": 30,
+        "profi": 80
     }.get(plan, 0)
 
 
