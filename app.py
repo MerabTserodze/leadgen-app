@@ -216,8 +216,8 @@ def register():
         to_email=email,
         subject="Willkommen bei LeadGen",
         content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
-          )
-          return redirect("/login")
+     )
+     return redirect("/login")
 
 
         return "Fehler: Registrierung fehlgeschlagen."
