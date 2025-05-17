@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_file, session, jsonify, abort
+from flask import Flask, render_template, request, redirect, send_file, session, jsonify
 from dotenv import load_dotenv
 from io import BytesIO
 import json
@@ -14,45 +14,36 @@ import requests
 import stripe
 import os
 
-
+# Загружаем переменные из .env или окружения
 load_dotenv()
 
-
-
-
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # вставь свой SECRET KEY в .env
-DOMAIN = os.getenv("DOMAIN")  # твой домен
-
+# Настройка Flask и Stripe
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+DOMAIN = os.getenv("DOMAIN")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/leadgen.db")  # <-- тут путь к БД
 
+# Константы
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
-
 EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+EXCLUDE_DOMAINS = ["sentry.io", "wixpress.com", "cloudflare", "example.com", "no-reply", "noreply", "localhost", "wordpress.com"]
 
-EXCLUDE_DOMAINS = [
-    "sentry.io", "wixpress.com", "cloudflare", "example.com",
-    "no-reply", "noreply", "localhost", "wordpress.com"
-]
+# =================== УТИЛИТЫ ===================
 
 def has_mx_record(domain):
     try:
-        answers = dns.resolver.resolve(domain, "MX")
-        return len(answers) > 0
+        return len(dns.resolver.resolve(domain, "MX")) > 0
     except:
         return False
 
 def is_valid_email(email):
     email = email.lower()
     BAD_PATTERNS = ["noreply", "no-reply", "support", "admin"]
-
     if any(p in email for p in BAD_PATTERNS):
         return False
-
-    for d in EXCLUDE_DOMAINS:
-        if d in email:
-            return False
-
+    if any(d in email for d in EXCLUDE_DOMAINS):
+        return False
     domain = email.split("@")[-1]
     return has_mx_record(domain)
 
@@ -61,7 +52,7 @@ async def fetch_html(session, url, retries=3):
         try:
             async with session.get(url, timeout=10) as response:
                 return await response.text()
-        except Exception:
+        except:
             await asyncio.sleep(2 ** attempt)
     return ""
 
@@ -82,65 +73,12 @@ async def extract_emails_from_url_async(urls):
 def get_email_limit():
     user = get_current_user()
     plan = user["plan"] if user else "free"
-    if plan == "starter":
-        return 50
-    elif plan == "profi":
-        return float("inf")
-    return 10
+    return 50 if plan == "starter" else float("inf") if plan == "profi" else 10
 
+# =================== БАЗА ДАННЫХ ===================
 
-def get_maps_results(keyword, location, radius_km=10):
-    params = {
-        "engine": "google_maps",
-        "type": "search",
-        "q": keyword,
-        "location": location,
-        "hl": "de",
-        "gl": "de",
-        "google_domain": "google.de",
-        "api_key": SERPAPI_KEY,
-        "num": 50,
-        "radius": radius_km * 1000
-    }
-
-    try:
-        response = requests.get("https://serpapi.com/search", params=params)
-        data = response.json()
-        results = data.get("local_results", [])
-        urls = [place.get("website") for place in results if place.get("website")]
-        return urls
-    except Exception as e:
-        print("❌ Fehler bei get_maps_results:", e)
-        return []
-
-def get_google_results(keyword, location):
-    query = f"{keyword} {location} kontakt email impressum site:.de"
-    params = {
-        "engine": "google",
-        "q": query,
-        "location": location,
-        "hl": "de",
-        "gl": "de",
-        "google_domain": "google.de",
-        "api_key": SERPAPI_KEY,
-        "num": 50
-    }
-
-    try:
-        response = requests.get("https://serpapi.com/search", params=params)
-        data = response.json()
-        urls = []
-        for result in data.get("organic_results", []):
-            link = result.get("link", "")
-            if any(x in link for x in ["facebook.com", "youtube.com", "tripadvisor.com"]):
-                continue
-            urls.append(link)
-        return urls
-    except Exception as e:
-        print("❌ Fehler bei get_google_results:", e)
-        return []
 def init_db():
-    conn = sqlite3.connect("leadgen.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -153,15 +91,14 @@ def init_db():
     conn.commit()
     conn.close()
 
-init_db()  # запускается при старте
-
 def register_user(email, password):
     password_hash = hashlib.sha256(password.encode()).hexdigest()
-    conn = sqlite3.connect("leadgen.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
     try:
         cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password_hash))
         conn.commit()
+        print(f"✅ Новый пользователь зарегистрирован: {email}")
         return True
     except:
         return False
@@ -170,7 +107,7 @@ def register_user(email, password):
 
 def login_user(email, password):
     password_hash = hashlib.sha256(password.encode()).hexdigest()
-    conn = sqlite3.connect("leadgen.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
     cur.execute("SELECT id FROM users WHERE email=? AND password=?", (email, password_hash))
     user = cur.fetchone()
@@ -184,14 +121,16 @@ def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
         return None
-    conn = sqlite3.connect("leadgen.db")
+    conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
     cur.execute("SELECT id, email, plan FROM users WHERE id=?", (user_id,))
     user = cur.fetchone()
     conn.close()
     return {"id": user[0], "email": user[1], "plan": user[2]} if user else None
 
+init_db()  # запустить один раз при старте
 
+# =================== ROUTES ===================
 
 @app.route("/")
 def homepage():
@@ -217,7 +156,6 @@ def register():
         return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
 
-
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     user = get_current_user()
@@ -228,7 +166,7 @@ def dashboard():
 
     if request.method == "POST":
         new_plan = request.form.get("plan")
-        conn = sqlite3.connect("leadgen.db")
+        conn = sqlite3.connect(DATABASE_PATH)
         cur = conn.cursor()
         cur.execute("UPDATE users SET plan=? WHERE id=?", (new_plan, user["id"]))
         conn.commit()
@@ -236,7 +174,6 @@ def dashboard():
         selected_plan = new_plan
 
     return render_template("dashboard.html", selected_plan=selected_plan)
-
 
 @app.route("/preise")
 def preise():
@@ -255,10 +192,7 @@ def emails():
             google_urls = get_google_results(keyword, location)
             urls = list(set(maps_urls + google_urls))
 
-            def is_valid_url(url):
-                return all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
-
-            urls = [url for url in urls if is_valid_url(url)]
+            urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
             urls = list(set(urls))[:50]
 
             print(f"🔍 {len(urls)} URLs nach Filter.")
@@ -300,11 +234,12 @@ def export():
 @app.route("/send")
 def send():
     return render_template("send.html")
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
-    
+
 @app.route("/subscribe/<plan>")
 def subscribe(plan):
     prices = {
@@ -324,18 +259,13 @@ def subscribe(plan):
         metadata={"plan": plan, "user_id": session.get("user_id")}
     )
 
-    return redirect(checkout_session.url, code=303)  # <- теперь правильно отформатирован
-
-
-
+    return redirect(checkout_session.url, code=303)
 
 @app.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get("stripe-signature")
-
-    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")  # вставь Stripe Webhook Secret
-    event = None
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
@@ -348,7 +278,7 @@ def stripe_webhook():
         user_id = session_data["metadata"].get("user_id")
 
         if plan and user_id:
-            conn = sqlite3.connect("leadgen.db")
+            conn = sqlite3.connect(DATABASE_PATH)
             cur = conn.cursor()
             cur.execute("UPDATE users SET plan = ? WHERE id = ?", (plan, user_id))
             conn.commit()
@@ -356,14 +286,14 @@ def stripe_webhook():
 
     return jsonify({"status": "success"}), 200
 
-    
 @app.route("/success")
 def success():
     return "🎉 Zahlung erfolgreich! Tarif wird bald aktualisiert."
 
+# Для Render
 if __name__ != "__main__":
     gunicorn_app = app
 
+# Для локального запуска
 if __name__ == "__main__":
-    app.run(debug=True)  # ← включи на время отладки
-
+    app.run(debug=True)
