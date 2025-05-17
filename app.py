@@ -165,9 +165,10 @@ def dashboard():
     selected_plan = user["plan"]
 
     if request.method == "POST":
-    error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
-    return render_template("dashboard.html", selected_plan=selected_plan, error=error), 403
+        error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
+        return render_template("dashboard.html", selected_plan=selected_plan, error=error), 403
 
+    return render_template("dashboard.html", selected_plan=selected_plan)
   
 
 @app.route("/preise")
