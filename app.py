@@ -62,16 +62,6 @@ async def extract_emails_from_url_async(urls):
             collected_emails.update(emails)
     return list(collected_emails)
 
-def get_email_limit():
-    user = get_current_user()
-    if not user:
-        return 0
-    plan = user["plan"]
-    return {
-        "free": 10,
-        "starter": 30,
-        "profi": 50
-    }.get(plan, 0)
 
 # --- Поисковые функции
 
@@ -138,16 +128,6 @@ def register_user(email, password):
     finally:
         conn.close()
         
-def get_request_limit():
-    user = get_current_user()
-    if not user:
-        return 0
-    plan = user["plan"]
-    return {
-        "free": 3,
-        "starter": 30,
-        "profi": 80
-    }.get(plan, 0)
 
 
 def login_user(email, password):
@@ -162,10 +142,13 @@ def login_user(email, password):
         return True
     return False
 
+
+
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
-        return None
+        return None  # ✅ Возвращаем None, а не redirect (это делает вызывающий код)
+
     conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
     cur.execute("SELECT id, email, plan, requests_used FROM users WHERE id=?", (user_id,))
@@ -177,6 +160,19 @@ def get_current_user():
         "plan": user[2],
         "requests_used": user[3]
     } if user else None
+    
+def get_user_limits():
+    user = get_current_user()
+    if not user:
+        return {"requests": 0, "emails": 0}
+    plan = user["plan"]
+    limits = {
+        "free": {"requests": 3, "emails": 10},
+        "starter": {"requests": 30, "emails": 30},
+        "profi": {"requests": 80, "emails": 50}
+    }
+    return limits.get(plan, {"requests": 0, "emails": 0})
+
     
 def init_db():
     conn = sqlite3.connect(DATABASE_PATH)
@@ -251,42 +247,25 @@ def register():
         return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
 
-@app.route("/dashboard", methods=["GET", "POST"])
+@app.route("/dashboard")
 def dashboard():
     user = get_current_user()
     if not user:
         return redirect("/login")
 
-    selected_plan = user["plan"]
-    limit = get_request_limit()
-    limit_display = "∞" if limit == float("inf") else limit
-    remaining = "∞" if limit == float("inf") else max(limit - user["requests_used"], 0)
-    is_unlimited = (limit == float("inf"))
+    limits = get_user_limits()
+    remaining = max(limits["requests"] - user["requests_used"], 0)
 
-    if request.method == "POST":
-        error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
-        return render_template(
-            "dashboard.html",
-            selected_plan=selected_plan,
-            user=user,
-            request_limit=limit,
-            request_limit_display=limit_display,
-            requests_remaining=remaining,
-            is_unlimited=is_unlimited,
-            error=error
-        ), 403
-
-    return render_template(
-        "dashboard.html",
-        selected_plan=selected_plan,
+    return render_template("dashboard.html",
+        selected_plan=user["plan"],
         user=user,
-        request_limit=limit,
-        request_limit_display=limit_display,
+        request_limit=limits["requests"],
+        request_limit_display=limits["requests"],
         requests_remaining=remaining,
-        is_unlimited=is_unlimited
+        is_unlimited=False
     )
 
-    )
+    
 @app.route("/preise")
 def preise():
     return render_template("preise.html")
@@ -298,47 +277,54 @@ def emails():
     if not user:
         return redirect("/login")
 
+    limits = get_user_limits()
+    max_requests = limits["requests"]
+    max_emails = limits["emails"]
+
     if request.method == "POST":
         try:
-            # Проверка лимита
-            if user["requests_used"] >= get_request_limit():
+            # Проверка лимита запросов
+            if user["requests_used"] >= max_requests:
                 return "❌ Du hast dein Anfrage-Limit erreicht."
 
-            keyword = request.form.get("keyword")
-            location = request.form.get("location")
+            keyword = request.form.get("keyword", "").strip()
+            location = request.form.get("location", "").strip()
             radius_km = int(request.form.get("radius", 10))
 
+            # Получение URLов из Maps + Google
             maps_urls = get_maps_results(keyword, location, radius_km)
             google_urls = get_google_results(keyword, location)
             urls = list(set(maps_urls + google_urls))
-            urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
-            urls = list(set(urls))[:50]
 
+            # Фильтрация плохих ссылок
+            urls = [
+                url for url in urls
+                if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
+            ]
+            urls = urls[:50]
+
+            # Извлечение email'ов
             all_emails = asyncio.run(extract_emails_from_url_async(urls))
             valid_emails = [e for e in all_emails if is_valid_email(e)]
 
-            # Извлекаем уже показанные email'ы
+            # Получение уже показанных email'ов
             conn = sqlite3.connect(DATABASE_PATH)
             cur = conn.cursor()
             cur.execute("SELECT email FROM seen_emails WHERE user_id = ?", (user["id"],))
             seen = set(row[0] for row in cur.fetchall())
 
-            # Убираем дубликаты
+            # Исключение дубликатов
             fresh_emails = [e for e in valid_emails if e not in seen]
-            results = list(set(fresh_emails))[:get_email_limit()]
+            results = list(set(fresh_emails))[:max_emails]
             session["emails"] = results
 
-            # Сохраняем выданные email'ы
+            # Сохранение показанных email'ов
             for email in results:
                 cur.execute("INSERT INTO seen_emails (user_id, email) VALUES (?, ?)", (user["id"], email))
 
-            # Увеличиваем счётчик запросов
+            # Обновление счетчика запросов и история
             cur.execute("UPDATE users SET requests_used = requests_used + 1 WHERE id = ?", (user["id"],))
-            # Сохраняем историю запроса
-            cur.execute("INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)",
-            (user["id"], keyword, location)
-            )
-
+            cur.execute("INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)", (user["id"], keyword, location))
             conn.commit()
             conn.close()
 
@@ -348,7 +334,6 @@ def emails():
             return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
 
     return render_template("emails.html", results=results)
-
 
 @app.route("/export")
 def export():
