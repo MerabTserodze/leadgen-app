@@ -10,6 +10,7 @@ import aiohttp
 import requests
 import stripe
 import os
+import bcrypt
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -141,9 +142,9 @@ def get_google_results(keyword, location):
 
 def register_user(email, password):
     db = SessionLocal()
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
     try:
-        user = User(email=email, password=password_hash)
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        user = User(email=email, password=hashed.decode('utf-8'))
         db.add(user)
         db.commit()
         return True
@@ -155,10 +156,9 @@ def register_user(email, password):
 
 def login_user(email, password):
     db = SessionLocal()
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
-    user = db.query(User).filter_by(email=email, password=password_hash).first()
+    user = db.query(User).filter_by(email=email).first()
     db.close()
-    if user:
+    if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
         session["user_id"] = user.id
         return True
     return False
