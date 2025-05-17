@@ -177,7 +177,7 @@ def get_current_user():
         "plan": user[2],
         "requests_used": user[3]
     } if user else None
-
+    
 def init_db():
     conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
