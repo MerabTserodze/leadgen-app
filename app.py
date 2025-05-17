@@ -198,8 +198,11 @@ def emails():
             results = list(set(valid_emails))[:get_email_limit()]
             session["emails"] = results
         except Exception as e:
+           import traceback
+            traceback.print_exc()
             print("❌ Gesamtfehler beim Suchen:", e)
             return "Ein Fehler ist aufgetreten beim Verarbeiten der Anfrage."
+
 
     return render_template("emails.html", results=results)
 
