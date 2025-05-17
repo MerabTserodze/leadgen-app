@@ -164,16 +164,11 @@ def dashboard():
 
     selected_plan = user["plan"]
 
-    if request.method == "POST":
-        new_plan = request.form.get("plan")
-        conn = sqlite3.connect(DATABASE_PATH)
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET plan=? WHERE id=?", (new_plan, user["id"]))
-        conn.commit()
-        conn.close()
-        selected_plan = new_plan
+   if request.method == "POST":
+    error = "⚠️ Tarifänderung ist nur über Stripe erlaubt."
+    return render_template("dashboard.html", selected_plan=selected_plan, error=error), 403
 
-    return render_template("dashboard.html", selected_plan=selected_plan)
+  
 
 @app.route("/preise")
 def preise():
