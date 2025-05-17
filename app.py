@@ -184,6 +184,12 @@ def init_db():
         )
     """)
     cur.execute("""
+        CREATE TABLE IF NOT EXISTS seen_emails (
+            user_id INTEGER,
+            email TEXT
+        )
+    """)
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -192,12 +198,6 @@ def init_db():
             searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    # Сохраняем историю запроса
-    cur.execute(
-    "INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)",
-    (user["id"], keyword, location)
-)
-
     conn.commit()
     conn.close()
 
@@ -313,6 +313,11 @@ def emails():
 
             # Увеличиваем счётчик запросов
             cur.execute("UPDATE users SET requests_used = requests_used + 1 WHERE id = ?", (user["id"],))
+            # Сохраняем историю запроса
+            cur.execute("INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)",
+            (user["id"], keyword, location)
+            )
+
             conn.commit()
             conn.close()
 
