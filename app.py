@@ -218,6 +218,7 @@ def register():
         content="Vielen Dank für deine Registrierung! Du kannst dich jetzt einloggen."
     )
     return redirect("/login")
+
         return "Fehler: Registrierung fehlgeschlagen."
     return render_template("register.html")
 
