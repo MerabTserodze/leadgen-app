@@ -184,15 +184,41 @@ def init_db():
         )
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS seen_emails (
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            email TEXT
+            keyword TEXT,
+            location TEXT,
+            searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Сохраняем историю запроса
+    cur.execute(
+    "INSERT INTO history (user_id, keyword, location) VALUES (?, ?, ?)",
+    (user["id"], keyword, location)
+)
+
     conn.commit()
     conn.close()
 
 # --- Роуты
+@app.route("/history")
+def history():
+    user = get_current_user()
+    if not user:
+        return redirect("/login")
+
+    conn = sqlite3.connect(DATABASE_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT keyword, location, searched_at FROM history WHERE user_id = ? ORDER BY searched_at DESC LIMIT 50",
+        (user["id"],)
+    )
+    records = cur.fetchall()
+    conn.close()
+
+    return render_template("history.html", records=records)
+
 
 @app.route("/")
 def homepage():
