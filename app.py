@@ -433,7 +433,6 @@ def emails():
     msg = f"✅ {found} Email(s) gefunden. Davon gespeichert: {saved}."
     else:
     msg = "❌ Keine Ergebnisse gefunden."
-
     return render_template("emails.html", message=msg, results=results)
 
 
