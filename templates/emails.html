@@ -12,36 +12,31 @@
       font-style: italic;
       color: #007bff;
     }
-
     .results-count {
       margin-top: 20px;
       font-weight: bold;
       color: green;
     }
-
     .email-list {
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
       margin-top: 10px;
     }
-
     .email-list li {
       margin: 3px 0;
     }
-
     .message-box {
       margin-top: 20px;
       font-weight: bold;
     }
-
     .message-box.green { color: green; }
     .message-box.red { color: red; }
   </style>
 </head>
 <body>
 
-<!-- Navbar -->
+<!-- 🔝 Navbar -->
 <div class="navbar">
   <div class="logo">LeadGen</div>
   <ul>
@@ -59,11 +54,11 @@
   <ul id="suggestions" class="list-group mt-2"></ul>
 </div>
 
-<!-- Hauptinhalt -->
+<!-- Hauptbereich -->
 <div class="container" style="padding: 40px 20px;">
   <h2>E-Mail-Suche</h2>
 
-  <!-- Formular -->
+  <!-- Suchformular -->
   <form method="POST" action="/emails" onsubmit="showLoading()">
     <label for="keyword">Stichwort(e):</label>
     <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Restaurant, Anwalt" />
@@ -77,10 +72,10 @@
     <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
   </form>
 
-  <!-- Loading -->
+  <!-- Loading-Anzeige -->
   <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
 
-  <!-- Nachricht -->
+  <!-- Server-Meldung -->
   {% if message %}
     <div class="message-box {% if '✅' in message %}green{% else %}red{% endif %}">
       {{ message }}
@@ -102,6 +97,7 @@
     <div style="margin-top: 15px;">
       <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
     </div>
+
   {% elif request.method == "POST" %}
     <p style="margin-top: 30px; color: orange;">
       🕒 Ergebnis wird vorbereitet... Bitte warte ein paar Sekunden...
@@ -114,6 +110,7 @@
   {% endif %}
 </div>
 
+<!-- JavaScript Funktionen -->
 <script>
   function showLoading() {
     document.getElementById('loading').style.display = 'block';
@@ -125,7 +122,7 @@
 
     fetch("/suggest_keywords", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ topic })
     })
     .then(res => res.json())
