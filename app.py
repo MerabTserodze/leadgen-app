@@ -396,24 +396,10 @@ def emails():
     db = SessionLocal()
 
 if request.method == "POST":
-    temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
-seen_emails = db.query(SeenEmail).filter_by(user_id=user.id).all()
-db.close()
-
-results = [t.email for t in temp_emails]
-found = len(results)
-saved = min(found, get_user_limits()["emails"])
-
-if found:
-    msg = f"✅ {found} Email(s) gefunden. Datei kann heruntergeladen werden:"
-else:
-    msg = "❌ Noch keine Ergebnisse gefunden."
-
-return render_template("emails.html", message=msg, results=results)
     if user.requests_used >= max_requests:
         return "❌ Du hast dein Anfrage-Limit erreicht."
 
-
+    # 🔍 по ключевым словам ищем сайты
     keyword = request.form.get("keyword", "").strip()
     location = request.form.get("location", "").strip()
     radius_km = int(request.form.get("radius", 10))
@@ -425,20 +411,20 @@ return render_template("emails.html", message=msg, results=results)
         url for url in urls
         if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
     ]
-    urls = urls[:20]  # ограничение
+    urls = urls[:20]
 
     if urls:
-        # только если есть URL-адреса → запускаем таску и учитываем использование
         collect_emails_to_file.delay(user.id, urls, max_emails)
-
         user.requests_used += 1
         db.add(user)
         db.add(History(user_id=user.id, keyword=keyword, location=location))
         db.commit()
-
+        db.close()
         return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.")
     else:
+        db.close()
         return render_template("emails.html", message="❌ Keine passenden URLs gefunden.")
+
 
 
     # --- GET-запрос: показать, если уже есть email'ы
