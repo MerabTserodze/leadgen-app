@@ -25,7 +25,6 @@ from sqlalchemy.exc import IntegrityError
 
 # --- Загрузка настроек
 load_dotenv()
-openai.api_key = os.getenv("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")
 
 
 app = Flask(__name__)
