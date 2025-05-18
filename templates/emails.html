@@ -72,17 +72,17 @@
     <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
   </form>
 
-  <!-- Loading-Anzeige -->
+  <!-- Ladeanzeige -->
   <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
 
-  <!-- Server-Meldung -->
+  <!-- Server-Nachricht -->
   {% if message %}
     <div class="message-box {% if '✅' in message %}green{% else %}red{% endif %}">
       {{ message }}
     </div>
   {% endif %}
 
-  <!-- Ergebnisse -->
+  <!-- Ergebnisliste -->
   {% if results %}
     <div class="results-count">
       ✅ {{ results|length }} E-Mail(s) gefunden:
@@ -93,12 +93,13 @@
       {% endfor %}
     </ul>
 
-    <!-- Excel-Export -->
+    <!-- Download-Link -->
     <div style="margin-top: 15px;">
-      <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
+      <a href="/download" class="btn btn-success">📥 Excel-Datei herunterladen</a>
     </div>
 
   {% elif request.method == "POST" %}
+    <!-- Warten auf Ergebnis -->
     <p style="margin-top: 30px; color: orange;">
       🕒 Ergebnis wird vorbereitet... Bitte warte ein paar Sekunden...
     </p>
@@ -110,7 +111,7 @@
   {% endif %}
 </div>
 
-<!-- JavaScript Funktionen -->
+<!-- JS-Funktionen -->
 <script>
   function showLoading() {
     document.getElementById('loading').style.display = 'block';
