@@ -24,6 +24,7 @@ SessionLocal = scoped_session(sessionmaker(bind=engine))
 Base = declarative_base()
 
 # --- Модели
+# --- Модели
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
@@ -35,6 +36,12 @@ class User(Base):
 
 class TempEmail(Base):
     __tablename__ = "temp_emails"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String)
+
+class SeenEmail(Base):
+    __tablename__ = "seen_emails"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
