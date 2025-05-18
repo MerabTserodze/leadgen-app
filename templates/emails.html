@@ -57,11 +57,22 @@
     <!-- Loading-Anzeige -->
     <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
     {% if message %}
-  <div class="results-count">{{ message }}</div>
-  <form action="/download" method="get" style="margin-top: 20px;">
-    <button type="submit" class="btn btn-secondary">📥 Datei herunterladen (Excel)</button>
-     </form>
-        {% endif %}
+    <div style="margin-bottom: 20px; font-weight: bold; color: {% if "✅" in message %}green{% else %}red{% endif %};">
+    {{ message }}
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <ul style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+    {% for email in results %}
+      <li>{{ email }}</li>
+    {% endfor %}
+    </ul>
+
+  <br>
+  <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
+{% endif %}
+
 
     <!-- Ergebnisse -->
     {% if results %}
