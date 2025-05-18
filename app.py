@@ -57,10 +57,10 @@ class History(Base):
     location = Column(String)
     searched_at = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print("ℹ️ Поле is_admin уже существует или ошибка:", e)
-
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print("ℹ️ Fehler beim Erstellen der Tabellen:", e)
 # --- Утилиты
 SERPAPI_KEY = "435924c0a06fc34cdaed22032ba6646be2d0db381a7cfff645593d77a7bd3dcd"
 EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
@@ -86,6 +86,7 @@ def send_email(to_email, subject, content):
             server.send_message(msg)
     except Exception as e:
         print("❌ Fehler beim Senden der E-Mail:", e)
+
 
 
 def is_valid_email(email):
