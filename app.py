@@ -53,6 +53,12 @@ class SeenEmail(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
 
+class TempEmail(Base):
+    __tablename__ = "temp_emails"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String)
+
 class History(Base):
     __tablename__ = "history"
     id = Column(Integer, primary_key=True)
@@ -382,8 +388,10 @@ def emails():
 
         return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.")
 
+    # --- GET-запрос: показать, если уже есть email'ы
+    temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
     db.close()
-    return render_template("emails.html")
+    return render_template("emails.html", results=[t.email for t in temp_emails])
 
 
 @app.route("/generate-email", methods=["POST"])
@@ -436,11 +444,24 @@ def download():
     if not user:
         return redirect("/login")
 
-    file_path = f"/tmp/emails_user_{user.id}.xlsx"
-    if os.path.exists(file_path):
-        return send_file(file_path, as_attachment=True, download_name="emails.xlsx")
-    else:
-        return "❌ Datei ist noch nicht bereit. Bitte versuche es später erneut."
+    db = SessionLocal()
+    emails = db.query(TempEmail).filter_by(user_id=user.id).all()
+    db.close()
+    if not emails:
+        return "❌ Noch keine Ergebnisse gefunden."
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Emails"
+    ws.append(["E-Mail"])
+    for e in emails:
+        ws.append([e.email])
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(output, download_name="emails.xlsx", as_attachment=True)
+
 
 
 @app.route("/stripe/webhook", methods=["POST"])
