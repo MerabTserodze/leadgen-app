@@ -7,8 +7,7 @@ from io import BytesIO
 from redis import Redis
 from celery import Celery
 from dotenv import load_dotenv
-from email.message import EmailMessage
-import smtplib
+
 
 load_dotenv()
 
@@ -38,22 +37,6 @@ async def extract_emails(urls):
                     emails.add(email)
     return list(emails)
 
-def send_email(to_email, subject, body, attachment=None):
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = os.getenv("SMTP_USER")
-    msg["To"] = to_email
-    msg.set_content(body)
-
-    if attachment:
-        msg.add_attachment(attachment.getvalue(), maintype="application",
-                           subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                           filename="emails.xlsx")
-
-    with smtplib.SMTP(os.getenv("SMTP_SERVER"), int(os.getenv("SMTP_PORT"))) as server:
-        server.starttls()
-        server.login(os.getenv("SMTP_USER"), os.getenv("SMTP_PASS"))
-        server.send_message(msg)
 
 @celery.task
 def collect_emails_to_file(user_id, urls, max_count):
