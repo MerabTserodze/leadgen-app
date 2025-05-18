@@ -12,3 +12,4 @@ bcrypt
 celery
 redis
 openai
+beautifulsoup4
