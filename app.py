@@ -12,6 +12,7 @@ import stripe
 import os
 import bcrypt
 import smtplib
+import openai
 from tasks import collect_and_send_emails
 from email.message import EmailMessage
 from datetime import datetime
@@ -19,6 +20,8 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import IntegrityError
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 # --- Загрузка настроек
 load_dotenv()
@@ -210,6 +213,27 @@ def get_user_limits():
 @app.route("/")
 def homepage():
     return render_template("home.html")
+
+@app.route("/suggest_keywords", methods=["POST"])
+def suggest_keywords():
+    data = request.get_json()
+    topic = data.get("topic", "")
+
+    prompt = f"Gib mir 5 relevante Google-Suchbegriffe für Unternehmen oder Kunden, die nach '{topic}' in Deutschland suchen."
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "Du bist ein Marketing-Experte."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=100
+        )
+        keywords = response.choices[0].message['content'].strip().split("\n")
+        return jsonify({"keywords": keywords})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/admin")
 def admin_panel():
