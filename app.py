@@ -349,48 +349,42 @@ def preise():
 
 @app.route("/emails", methods=["GET", "POST"])
 def emails():
-    results = []
     user = get_current_user()
     if not user:
         return redirect("/login")
+
     limits = get_user_limits()
     max_requests = limits["requests"]
     max_emails = limits["emails"]
     db = SessionLocal()
+
     if request.method == "POST":
         if user.requests_used >= max_requests:
             return "❌ Du hast dein Anfrage-Limit erreicht."
+
         keyword = request.form.get("keyword", "").strip()
         location = request.form.get("location", "").strip()
         radius_km = int(request.form.get("radius", 10))
+
         maps_urls = get_maps_results(keyword, location, radius_km)
         google_urls = get_google_results(keyword, location)
         urls = list(set(maps_urls + google_urls))
         urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
         urls = urls[:50]
-        all_emails = asyncio.run(extract_emails_from_url_async(urls))
-        valid_emails = [e for e in all_emails if is_valid_email(e)]
-        seen = {row.email for row in db.query(SeenEmail).filter_by(user_id=user.id).all()}
-        fresh_emails = [e for e in valid_emails if e not in seen]
-        results = list(set(fresh_emails))[:max_emails]
-        collect_and_send_emails.delay(user.email, urls, max_emails)
 
-        for email in results:
-            db.add(SeenEmail(user_id=user.id, email=email))
+        print("🚀 Отправка задачи Celery на генерацию Excel-файла...")
+        collect_emails_to_file.delay(user.id, urls, max_emails)
 
         user.requests_used += 1
         db.add(History(user_id=user.id, keyword=keyword, location=location))
         db.commit()
         db.close()
 
-        return "✅ Deine Anfrage wird im Hintergrund verarbeitet."
-        for email in results:
-            db.add(SeenEmail(user_id=user.id, email=email))
-        user.requests_used += 1
-        db.add(History(user_id=user.id, keyword=keyword, location=location))
-        db.commit()
+        return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.")
+
     db.close()
-    return render_template("emails.html", results=results)
+    return render_template("emails.html")
+
 
 @app.route("/generate-email", methods=["POST"])
 def generate_email():
@@ -449,6 +443,19 @@ def subscribe(plan):
         metadata={"plan": plan, "user_id": session.get("user_id")}
     )
     return redirect(checkout_session.url, code=303)
+
+@app.route("/download")
+def download():
+    user = get_current_user()
+    if not user:
+        return redirect("/login")
+
+    file_path = f"/tmp/emails_user_{user.id}.xlsx"
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True, download_name="emails.xlsx")
+    else:
+        return "❌ Datei ist noch nicht bereit. Bitte versuche es später erneut."
+
 
 @app.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
