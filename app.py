@@ -20,11 +20,13 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import IntegrityError
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 
 # --- Загрузка настроек
 load_dotenv()
+openai.api_key = os.getenv("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")
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -390,6 +392,30 @@ def emails():
         db.commit()
     db.close()
     return render_template("emails.html", results=results)
+
+@app.route("/generate-email", methods=["POST"])
+def generate_email():
+    data = request.get_json()
+    prompt = data.get("prompt")
+
+    if not prompt:
+        return jsonify({"error": "Prompt fehlt"}), 400
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Du bist ein professioneller Marketingtexter."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        message = response["choices"][0]["message"]["content"]
+        return jsonify({"result": message.strip()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/export")
 def export():
