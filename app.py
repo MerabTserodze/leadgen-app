@@ -20,6 +20,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import IntegrityError
+from bs4 import BeautifulSoup
 
 
 
@@ -117,15 +118,44 @@ async def fetch_html(session, url, retries=3):
             await asyncio.sleep(2 ** attempt)
     return ""
 
+COMMON_PATHS = ["/kontakt", "/impressum", "/about", "/ueber-uns", "/info", "/contact"]
+
 async def extract_emails_from_url_async(urls):
     collected_emails = set()
     headers = {"User-Agent": "Mozilla/5.0"}
+
     async with aiohttp.ClientSession(headers=headers) as session:
-        tasks = [fetch_html(session, url) for url in urls]
+        tasks = []
+
+        # Обходим главную страницу + доп. пути (kontakt и т.д.)
+        for url in urls:
+            base_url = url.rstrip("/")
+            extended_urls = [base_url + path for path in COMMON_PATHS]
+            all_urls = [base_url] + extended_urls
+
+            for u in all_urls:
+                tasks.append(fetch_html(session, u))
+
         responses = await asyncio.gather(*tasks)
+
         for html in responses:
-            emails = re.findall(EMAIL_REGEX, html)
-            collected_emails.update(emails)
+            if not html:
+                continue
+
+            soup = BeautifulSoup(html, "html.parser")
+
+            # 1. Поиск в тексте
+            text_emails = re.findall(EMAIL_REGEX, soup.get_text())
+            collected_emails.update(text_emails)
+
+            # 2. Поиск в mailto-ссылках
+            mailtos = soup.find_all("a", href=True)
+            for tag in mailtos:
+                href = tag["href"]
+                if "mailto:" in href:
+                    email = href.split("mailto:")[1].split("?")[0]
+                    collected_emails.add(email)
+
     return list(collected_emails)
 
 # --- Поиск
