@@ -58,9 +58,6 @@ class History(Base):
     searched_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
-with engine.connect() as conn:
-    try:
-        conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;")
     except Exception as e:
         print("ℹ️ Поле is_admin уже существует или ошибка:", e)
 
