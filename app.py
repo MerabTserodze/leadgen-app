@@ -13,7 +13,7 @@ import os
 import bcrypt
 import smtplib
 import openai
-from tasks import collect_and_send_emails
+from tasks import collect_emails_to_file
 from email.message import EmailMessage
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
@@ -410,21 +410,7 @@ def generate_email():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/export")
-def export():
-    emails = session.get("emails", [])
-    if not emails:
-        return "Keine Daten zum Exportieren."
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "E-Mails"
-    ws.append(["E-Mail-Adresse"])
-    for email in emails:
-        ws.append([email])
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return send_file(output, download_name="emails.xlsx", as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
 
 @app.route("/subscribe/<plan>")
 def subscribe(plan):
