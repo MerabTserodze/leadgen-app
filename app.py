@@ -47,17 +47,18 @@ class User(Base):
     requests_used = Column(Integer, default=0)
     is_admin = Column(Integer, default=0)
 
+class TempEmail(Base):
+    __tablename__ = "temp_emails"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String)
+
 class SeenEmail(Base):
     __tablename__ = "seen_emails"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
 
-class TempEmail(Base):
-    __tablename__ = "temp_emails"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    email = Column(String)
 
 class History(Base):
     __tablename__ = "history"
