@@ -211,6 +211,18 @@ def get_user_limits():
 def homepage():
     return render_template("home.html")
 
+@app.route("/admin")
+def admin_panel():
+    user = get_current_user()
+    if not user or not user.is_admin:
+        return redirect("/login")
+
+    db = SessionLocal()
+    users = db.query(User).all()
+    db.close()
+    return render_template("admin.html", users=users)
+
+
 
 @app.route("/admin/toggle_admin", methods=["POST"])
 def toggle_admin():
