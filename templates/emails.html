@@ -103,7 +103,15 @@
       <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
     </div>
   {% elif request.method == "POST" %}
-    <div class="message-box red">❌ Keine Ergebnisse gefunden.</div>
+  <p style="margin-top: 30px; color: orange;">
+    🕒 Ergebnis wird vorbereitet... Bitte warte ein paar Sekunden...
+  </p>
+  <script>
+    setTimeout(() => {
+      window.location.reload();
+    }, 5000);  // 5 секунд
+  </script>
+{% endif %}
 
     <!-- Automatisches Reload nach 5 Sekunden -->
     <script>
