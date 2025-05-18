@@ -421,8 +421,20 @@ def emails():
 
     # --- GET-запрос: показать, если уже есть email'ы
     temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
+    seen_emails = db.query(SeenEmail).filter_by(user_id=user.id).all()
     db.close()
-    return render_template("emails.html", results=[t.email for t in temp_emails])
+
+    results = [t.email for t in temp_emails]
+    found = len(results)
+    saved = min(found, get_user_limits()["emails"])
+
+    if found:
+    msg = f"✅ {found} Email(s) gefunden. Davon gespeichert: {saved}."
+    else:
+    msg = "❌ Keine Ergebnisse gefunden."
+
+    return render_template("emails.html", message=msg, results=results)
+
 
 
 @app.route("/generate-email", methods=["POST"])
