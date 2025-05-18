@@ -213,21 +213,6 @@ def get_user_limits():
 def homepage():
     return render_template("home.html")
 
-@app.route("/admin/update_plan", methods=["POST"])
-def update_plan():
-    user = get_current_user()
-    if not user or not user.is_admin:
-        return jsonify({"error": "Unauthorized"}), 403
-    data = request.get_json()
-    user_id = data.get("user_id")
-    new_plan = data.get("plan")
-    db = SessionLocal()
-    target = db.query(User).filter_by(id=user_id).first()
-    if target:
-        target.plan = new_plan
-        db.commit()
-    db.close()
-    return jsonify({"status": "success"})
 
 @app.route("/admin/toggle_admin", methods=["POST"])
 def toggle_admin():
