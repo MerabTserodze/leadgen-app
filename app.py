@@ -395,30 +395,36 @@ def emails():
     max_emails = limits["emails"]
     db = SessionLocal()
 
-    if request.method == "POST":
-        if user.requests_used >= max_requests:
-            return "❌ Du hast dein Anfrage-Limit erreicht."
+if request.method == "POST":
+    if user.requests_used >= max_requests:
+        return "❌ Du hast dein Anfrage-Limit erreicht."
 
-        keyword = request.form.get("keyword", "").strip()
-        location = request.form.get("location", "").strip()
-        radius_km = int(request.form.get("radius", 10))
+    keyword = request.form.get("keyword", "").strip()
+    location = request.form.get("location", "").strip()
+    radius_km = int(request.form.get("radius", 10))
 
-        maps_urls = get_maps_results(keyword, location, radius_km)
-        google_urls = get_google_results(keyword, location)
-        urls = list(set(maps_urls + google_urls))
-        urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
-        urls = urls[:20]
+    maps_urls = get_maps_results(keyword, location, radius_km)
+    google_urls = get_google_results(keyword, location)
+    urls = list(set(maps_urls + google_urls))
+    urls = [
+        url for url in urls
+        if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
+    ]
+    urls = urls[:20]  # ограничение
 
-        print("🚀 Отправка задачи Celery на генерацию Excel-файла...")
+    if urls:
+        # только если есть URL-адреса → запускаем таску и учитываем использование
         collect_emails_to_file.delay(user.id, urls, max_emails)
 
         user.requests_used += 1
         db.add(user)
         db.add(History(user_id=user.id, keyword=keyword, location=location))
         db.commit()
-        db.close()
 
         return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.")
+    else:
+        return render_template("emails.html", message="❌ Keine passenden URLs gefunden.")
+
 
     # --- GET-запрос: показать, если уже есть email'ы
     temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
