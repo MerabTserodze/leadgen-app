@@ -24,11 +24,23 @@ SessionLocal = scoped_session(sessionmaker(bind=engine))
 Base = declarative_base()
 
 # Модель временных email'ов
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+    plan = Column(String, default="free")
+    requests_used = Column(Integer, default=0)
+    is_admin = Column(Integer, default=0)
+
 class TempEmail(Base):
     __tablename__ = "temp_emails"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))  # user_id ссылается на users.id
     email = Column(String)
+
 
 Base.metadata.create_all(bind=engine)
 
