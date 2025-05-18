@@ -2,33 +2,41 @@ import os
 import re
 import asyncio
 import aiohttp
+import openpyxl
+from io import BytesIO
 from dotenv import load_dotenv
 from celery import Celery
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
 
-# --- Настройки
+# Загрузка переменных среды
 load_dotenv()
-REDIS_URL = os.getenv("REDIS_URL")
-DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Настройки Redis и Celery
+REDIS_URL = os.getenv("REDIS_URL")
 celery = Celery("tasks", broker=REDIS_URL)
+
+# Настройки базы данных
+DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = scoped_session(sessionmaker(bind=engine))
 Base = declarative_base()
 
-# --- Локальная модель (дублируем TempEmail)
+# Модель временных email'ов
 class TempEmail(Base):
     __tablename__ = "temp_emails"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
 
-# --- Email-фильтры
-EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
-EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "no-reply", "noreply"]
+Base.metadata.create_all(bind=engine)
 
-# --- HTML-фетчинг
+# Настройки фильтрации
+EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "no-reply", "noreply", "support", "admin", "localhost"]
+
+# Получение HTML
 async def fetch_html(session, url):
     try:
         async with session.get(url, timeout=10) as response:
@@ -36,6 +44,7 @@ async def fetch_html(session, url):
     except:
         return ""
 
+# Извлечение email'ов
 async def extract_emails(urls):
     emails = set()
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -48,23 +57,35 @@ async def extract_emails(urls):
                     emails.add(email)
     return list(emails)
 
-# --- Celery-задача
+# Главная задача Celery
 @celery.task
 def collect_emails_to_file(user_id, urls, max_count):
     print(f"📥 Starte E-Mail-Sammlung für User {user_id}")
+    db = SessionLocal()
+
+    # Удаляем старые email'ы пользователя
+    db.query(TempEmail).filter_by(user_id=user_id).delete()
+    db.commit()
+
     emails = asyncio.run(extract_emails(urls))
     selected = emails[:max_count]
-    print(f"📊 Gefundene E-Mails: {len(emails)}, gespeichert: {len(selected)}")
+    print(f"📨 Gefundene E-Mails: {len(emails)}, verwendet: {len(selected)}")
 
-    db = SessionLocal()
-    try:
-        db.query(TempEmail).filter_by(user_id=user_id).delete()
-        for e in selected:
-            db.add(TempEmail(user_id=user_id, email=e))
-        db.commit()
-        print(f"✅ Emails gespeichert für User {user_id}")
-    except Exception as e:
-        print(f"❌ Fehler beim Speichern in DB: {e}")
-        db.rollback()
-    finally:
-        db.close()
+    # Сохраняем в базу
+    for email in selected:
+        db.add(TempEmail(user_id=user_id, email=email))
+    db.commit()
+
+    # Также сохраняем в Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Emails"
+    ws.append(["E-Mail"])
+    for e in selected:
+        ws.append([e])
+
+    output_path = f"/tmp/emails_user_{user_id}.xlsx"
+    wb.save(output_path)
+    print(f"✅ Datei gespeichert: {output_path}")
+
+    db.close()
