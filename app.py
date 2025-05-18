@@ -241,16 +241,26 @@ def login():
         return "Fehler: Ungültige Zugangsdaten."
     return render_template("login.html")
     
-@app.route("/admin")
-def admin_panel():
+@app.route("/admin/update_plan", methods=["POST"])
+def update_plan():
     user = get_current_user()
     if not user or not getattr(user, "is_admin", False):
-        return redirect("/login")
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json()
+    user_id = data.get("user_id")
+    new_plan = data.get("plan")
 
     db = SessionLocal()
-    users = db.query(User).all()
-    db.close()
-    return render_template("admin.html", users=users)
+    target_user = db.query(User).filter_by(id=user_id).first()
+    if target_user:
+        target_user.plan = new_plan
+        db.commit()
+        db.close()
+        return jsonify({"success": True})
+    else:
+        db.close()
+        return jsonify({"error": "User not found"}), 404
 
 
 @app.route("/logout")
