@@ -11,3 +11,4 @@ gunicorn
 bcrypt
 celery
 redis
+openai
