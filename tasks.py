@@ -3,11 +3,8 @@ import re
 import asyncio
 import aiohttp
 import openpyxl
-from io import BytesIO
-from redis import Redis
 from celery import Celery
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -37,12 +34,12 @@ async def extract_emails(urls):
                     emails.add(email)
     return list(emails)
 
-
 @celery.task
 def collect_emails_to_file(user_id, urls, max_count):
-    print(f"📥 Start collecting for user {user_id}")
+    print(f"📥 Starte E-Mail-Sammlung für User {user_id}")
     emails = asyncio.run(extract_emails(urls))
     selected = emails[:max_count]
+    print(f"📨 Gefundene E-Mails: {len(emails)}, verwendet: {len(selected)}")
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -53,4 +50,4 @@ def collect_emails_to_file(user_id, urls, max_count):
 
     output_path = f"/tmp/emails_user_{user_id}.xlsx"
     wb.save(output_path)
-    print(f"✅ Saved Excel to {output_path}")
+    print(f"✅ Datei gespeichert: {output_path}")
