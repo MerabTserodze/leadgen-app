@@ -240,6 +240,18 @@ def login():
             return redirect("/dashboard")
         return "Fehler: Ungültige Zugangsdaten."
     return render_template("login.html")
+    
+@app.route("/admin")
+def admin_panel():
+    user = get_current_user()
+    if not user or not getattr(user, "is_admin", False):
+        return redirect("/login")
+
+    db = SessionLocal()
+    users = db.query(User).all()
+    db.close()
+    return render_template("admin.html", users=users)
+
 
 @app.route("/logout")
 def logout():
