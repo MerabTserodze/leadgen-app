@@ -395,41 +395,38 @@ def emails():
     max_emails = limits["emails"]
     db = SessionLocal()
 
-if request.method == "POST":
-    if user.requests_used >= max_requests:
-        return "❌ Du hast dein Anfrage-Limit erreicht."
+    if request.method == "POST":
+        if user.requests_used >= max_requests:
+            db.close()
+            return render_template("emails.html", message="❌ Du hast dein Anfrage-Limit erreicht.", results=[])
 
-    # 🔍 по ключевым словам ищем сайты
-    keyword = request.form.get("keyword", "").strip()
-    location = request.form.get("location", "").strip()
-    radius_km = int(request.form.get("radius", 10))
+        keyword = request.form.get("keyword", "").strip()
+        location = request.form.get("location", "").strip()
+        radius_km = int(request.form.get("radius", 10))
 
-    maps_urls = get_maps_results(keyword, location, radius_km)
-    google_urls = get_google_results(keyword, location)
-    urls = list(set(maps_urls + google_urls))
-    urls = [
-        url for url in urls
-        if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
-    ]
-    urls = urls[:20]
+        maps_urls = get_maps_results(keyword, location, radius_km)
+        google_urls = get_google_results(keyword, location)
+        urls = list(set(maps_urls + google_urls))
+        urls = [
+            url for url in urls
+            if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])
+        ]
+        urls = urls[:20]
 
-    if urls:
-        collect_emails_to_file.delay(user.id, urls, max_emails)
-        user.requests_used += 1
-        db.add(user)
-        db.add(History(user_id=user.id, keyword=keyword, location=location))
-        db.commit()
-        db.close()
-        return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.")
-    else:
-        db.close()
-        return render_template("emails.html", message="❌ Keine passenden URLs gefunden.")
+        if urls:
+            collect_emails_to_file.delay(user.id, urls, max_emails)
+            user.requests_used += 1
+            db.add(user)
+            db.add(History(user_id=user.id, keyword=keyword, location=location))
+            db.commit()
+            db.close()
+            return render_template("emails.html", message="✅ Datei wird im Hintergrund erstellt. Bitte gleich herunterladen.", results=[])
+        else:
+            db.close()
+            return render_template("emails.html", message="❌ Keine passenden URLs gefunden.", results=[])
 
-
-
-    # --- GET-запрос: показать, если уже есть email'ы
+    # --- GET-запрос: показать, если уже есть результаты
     temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
-    seen_emails = db.query(SeenEmail).filter_by(user_id=user.id).all()
     db.close()
 
     results = [t.email for t in temp_emails]
@@ -437,12 +434,11 @@ if request.method == "POST":
     saved = min(found, get_user_limits()["emails"])
 
     if found:
-        msg = f"✅ {found} Email(s) gefunden. Davon gespeichert: {saved}."
+        msg = f"✅ {found} Email(s) gefunden. Datei kann heruntergeladen werden:"
     else:
-        msg = "❌ Keine Ergebnisse gefunden."
+        msg = "❌ Noch keine Ergebnisse gefunden."
 
     return render_template("emails.html", message=msg, results=results)
-
 
 
 @app.route("/generate-email", methods=["POST"])
