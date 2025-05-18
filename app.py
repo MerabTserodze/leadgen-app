@@ -413,6 +413,7 @@ def emails():
         collect_emails_to_file.delay(user.id, urls, max_emails)
 
         user.requests_used += 1
+        db.add(user)
         db.add(History(user_id=user.id, keyword=keyword, location=location))
         db.commit()
         db.close()
