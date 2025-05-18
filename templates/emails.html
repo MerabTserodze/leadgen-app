@@ -14,123 +14,141 @@
     }
 
     .results-count {
-      margin-top: 30px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: green;
+    }
+
+    .email-list {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .email-list li {
+      margin: 3px 0;
+    }
+
+    .message-box {
+      margin-top: 20px;
       font-weight: bold;
     }
+
+    .message-box.green { color: green; }
+    .message-box.red { color: red; }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
-  <div class="navbar">
-    <div class="logo">LeadGen</div>
-    <ul>
-      <li><a href="/dashboard">Dashboard</a></li>
-      <li><a href="/emails">E-Mail-Suche</a></li>
-      <li><a href="/send">E-Mail-Versand</a></li>
-      <li><a href="/preise">Tarife</a></li>
-      <li><a href="/logout">Logout</a></li>
-    </ul>
-  </div>
-  <div class="mb-2">
-    <button type="button" class="btn btn-outline-info btn-sm" onclick="getSuggestions()">🔍 Vorschläge anzeigen</button>
-    <ul id="suggestions" class="list-group mt-2"></ul>
-  </div>
+<!-- Navbar -->
+<div class="navbar">
+  <div class="logo">LeadGen</div>
+  <ul>
+    <li><a href="/dashboard">Dashboard</a></li>
+    <li><a href="/emails">E-Mail-Suche</a></li>
+    <li><a href="/send">E-Mail-Versand</a></li>
+    <li><a href="/preise">Tarife</a></li>
+    <li><a href="/logout">Logout</a></li>
+  </ul>
+</div>
 
-  <div class="container" style="padding: 40px 20px;">
-    <h2>E-Mail-Suche</h2>
+<!-- Vorschläge anzeigen -->
+<div class="mb-2" style="padding: 10px 20px;">
+  <button type="button" class="btn btn-outline-info btn-sm" onclick="getSuggestions()">🔍 Vorschläge anzeigen</button>
+  <ul id="suggestions" class="list-group mt-2"></ul>
+</div>
 
-    <!-- Suchformular -->
-    <form method="POST" action="/emails" onsubmit="showLoading()">
-      <label for="keyword">Stichwort(e):</label>
-      <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Restaurant, Anwalt" />
+<!-- Hauptinhalt -->
+<div class="container" style="padding: 40px 20px;">
+  <h2>E-Mail-Suche</h2>
 
-      <label for="location">Ort / Adresse:</label>
-      <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, Hamburg" />
+  <!-- Formular -->
+  <form method="POST" action="/emails" onsubmit="showLoading()">
+    <label for="keyword">Stichwort(e):</label>
+    <input type="text" id="keyword" name="keyword" class="form-input" required placeholder="z.B. Restaurant, Anwalt" />
 
-      <label for="radius">Radius (km):</label>
-      <input type="number" id="radius" name="radius" class="form-input" value="10" min="1" max="100" />
+    <label for="location">Ort / Adresse:</label>
+    <input type="text" id="location" name="location" class="form-input" required placeholder="z.B. Berlin, Hamburg" />
 
-      <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
-    </form>
+    <label for="radius">Radius (km):</label>
+    <input type="number" id="radius" name="radius" class="form-input" value="10" min="1" max="100" />
 
-    <!-- Loading-Anzeige -->
-    <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
-    {% if message %}
-    <div style="margin-bottom: 20px; font-weight: bold; color: {% if "✅" in message %}green{% else %}red{% endif %};">
-    {{ message }}
+    <button type="submit" class="btn" style="margin-top: 10px;">Suchen</button>
+  </form>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
+
+  <!-- Nachricht -->
+  {% if message %}
+    <div class="message-box {% if '✅' in message %}green{% else %}red{% endif %}">
+      {{ message }}
     </div>
-    {% endif %}
+  {% endif %}
 
-    {% if results %}
-    <ul style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-    {% for email in results %}
-      <li>{{ email }}</li>
-    {% endfor %}
+  <!-- Ergebnisse -->
+  {% if results %}
+    <div class="results-count">
+      ✅ {{ results|length }} E-Mail(s) gefunden:
+    </div>
+    <ul class="email-list">
+      {% for email in results %}
+        <li>{{ email }}</li>
+      {% endfor %}
     </ul>
 
-  <br>
-  <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
-{% endif %}
+    <!-- Excel-Export -->
+    <div style="margin-top: 15px;">
+      <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
+    </div>
+  {% elif request.method == "POST" %}
+    <div class="message-box red">❌ Keine Ergebnisse gefunden.</div>
 
+    <!-- Automatisches Reload nach 5 Sekunden -->
+    <script>
+      setTimeout(function() {
+        window.location.reload();
+      }, 5000);
+    </script>
+  {% endif %}
+</div>
 
-    <!-- Ergebnisse -->
-    {% if results %}
-      <div class="results-count">
-        ✅ {{ results|length }} E-Mail(s) gefunden:
-      </div>
-      <ul style="margin-top: 10px;">
-        {% for email in results %}
-          <li>{{ email }}</li>
-        {% endfor %}
-      </ul>
-
-      <!-- Excel-Export -->
-      <form action="/export" method="get" style="margin-top: 20px;">
-        <button type="submit" class="btn btn-secondary">Als Excel exportieren</button>
-      </form>
-
-    {% elif request.method == "POST" %}
-      <p style="margin-top: 30px;">❌ Keine Ergebnisse gefunden.</p>
-    {% endif %}
-  </div>
-
-  <script>
-    function showLoading() {
-      document.getElementById('loading').style.display = 'block';
-    }
-  </script>
 <script>
-function getSuggestions() {
+  function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+  }
+
+  function getSuggestions() {
     const topic = document.querySelector('input[name="keyword"]').value;
     if (!topic) return alert("Bitte gib ein Thema ein.");
 
     fetch("/suggest_keywords", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ topic })
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ topic })
     })
     .then(res => res.json())
     .then(data => {
-        const list = document.getElementById("suggestions");
-        list.innerHTML = "";
-        if (data.keywords) {
-            data.keywords.forEach(k => {
-                const li = document.createElement("li");
-                li.textContent = k.replace(/^[0-9]+\\.\\s*/, '');
-                li.classList.add("list-group-item", "list-group-item-action");
-                li.style.cursor = "pointer";
-                li.onclick = () => {
-                    document.querySelector('input[name="keyword"]').value = li.textContent;
-                };
-                list.appendChild(li);
-            });
-        } else {
-            list.innerHTML = "<li class='list-group-item text-danger'>❌ Fehler bei Vorschlägen</li>";
-        }
+      const list = document.getElementById("suggestions");
+      list.innerHTML = "";
+      if (data.keywords) {
+        data.keywords.forEach(k => {
+          const li = document.createElement("li");
+          li.textContent = k.replace(/^[0-9]+\\.\\s*/, '');
+          li.classList.add("list-group-item", "list-group-item-action");
+          li.style.cursor = "pointer";
+          li.onclick = () => {
+            document.querySelector('input[name="keyword"]').value = li.textContent;
+          };
+          list.appendChild(li);
+        });
+      } else {
+        list.innerHTML = "<li class='list-group-item text-danger'>❌ Fehler bei Vorschlägen</li>";
+      }
     })
     .catch(() => alert("Fehler beim Abrufen der Vorschläge."));
-}
+  }
 </script>
 
 </body>
