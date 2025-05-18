@@ -13,3 +13,4 @@ celery
 redis
 openai
 beautifulsoup4
+aiohttp
