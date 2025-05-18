@@ -73,6 +73,7 @@ async def extract_emails(urls):
 @celery.task
 def collect_emails_to_file(user_id, urls, max_count):
     print(f"📥 Starte E-Mail-Sammlung für User {user_id}")
+    print(f"💡 Список email-ов: {emails}")
     db = SessionLocal()
 
     # Удаляем старые email'ы пользователя
