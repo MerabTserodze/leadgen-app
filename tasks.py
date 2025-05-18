@@ -56,24 +56,18 @@ def send_email(to_email, subject, body, attachment=None):
         server.send_message(msg)
 
 @celery.task
-def collect_and_send_emails(user_email, urls, max_count):
+def collect_emails_to_file(user_id, urls, max_count):
+    print(f"📥 Start collecting for user {user_id}")
     emails = asyncio.run(extract_emails(urls))
     selected = emails[:max_count]
 
-    # Сохраняем в Excel
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Emails"
     ws.append(["E-Mail"])
     for e in selected:
         ws.append([e])
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
 
-    send_email(
-        to_email=user_email,
-        subject="🎯 LeadGen Ergebnis",
-        body="Hier sind die gefundenen E-Mails. Viel Erfolg!",
-        attachment=output
-    )
+    output_path = f"/tmp/emails_user_{user_id}.xlsx"
+    wb.save(output_path)
+    print(f"✅ Saved Excel to {output_path}")
