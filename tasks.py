@@ -110,7 +110,7 @@ def collect_emails_to_file(user_id, urls, max_count):
 
     db = SessionLocal()
 
-    # Удаляем старые email'ы
+    # Удаляем временные email'ы пользователя
     db.query(TempEmail).filter_by(user_id=user_id).delete()
     db.commit()
 
@@ -124,10 +124,23 @@ def collect_emails_to_file(user_id, urls, max_count):
     print(f"📨 Найдено email'ов: {len(emails)}")
     print(f"💡 Список email'ов: {emails}")
 
-    selected = emails[:max_count]  # можно отключить лимит на тест
+    # Загружаем уже увиденные email'ы этого пользователя
+    seen_emails = set(row[0] for row in db.query(SeenEmail.email).filter_by(user_id=user_id).all())
+    new_emails = [e for e in emails if e not in seen_emails]
 
+    print(f"🧹 Уникальные email'ы для пользователя {user_id}: {len(new_emails)}")
+
+    # Обрезаем до лимита
+    selected = new_emails[:max_count]
+
+    # Сохраняем во временную таблицу
     for email in selected:
         db.add(TempEmail(user_id=user_id, email=email))
+
+    # Запоминаем в SeenEmail
+    for email in selected:
+        db.add(SeenEmail(user_id=user_id, email=email))
+
     db.commit()
 
     # Сохраняем в Excel
@@ -143,3 +156,4 @@ def collect_emails_to_file(user_id, urls, max_count):
     print(f"✅ Excel-файл сохранён: {output_path}")
 
     db.close()
+
