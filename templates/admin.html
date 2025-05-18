@@ -58,54 +58,85 @@
                     <th>Verbrauch</th>
                     <th>Admin?</th>
                 </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        <select class="form-select" onchange="updatePlan({{ user.id }}, this.value)">
-                            <option value="free" {% if user.plan == 'free' %}selected{% endif %}>free</option>
-                            <option value="starter" {% if user.plan == 'starter' %}selected{% endif %}>starter</option>
-                            <option value="profi" {% if user.plan == 'profi' %}selected{% endif %}>profi</option>
-                        </select>
-                    </td>
-                    <td>{{ user.requests_used }}</td>
-                    <td>
-                        {% if user.is_admin %}
-                            <span class="text-success fw-bold">✔</span>
-                        {% else %}
-                            <span class="text-danger fw-bold">✖</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>E-Mail</th>
+            <th>Tarif</th>
+            <th>Verbrauch</th>
+            <th>Admin?</th>
+            <th>Aktionen</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+                <select class="form-select" onchange="updatePlan({{ user.id }}, this.value)">
+                    <option value="free" {% if user.plan == 'free' %}selected{% endif %}>free</option>
+                    <option value="starter" {% if user.plan == 'starter' %}selected{% endif %}>starter</option>
+                    <option value="profi" {% if user.plan == 'profi' %}selected{% endif %}>profi</option>
+                </select>
+            </td>
+            <td>{{ user.requests_used }}</td>
+            <td>
+                {% if user.is_admin %}
+                    <span class="text-success fw-bold">✔</span>
+                {% else %}
+                    <span class="text-danger fw-bold">✖</span>
+                {% endif %}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-warning" onclick="toggleAdmin({{ user.id }})">
+                    {% if user.is_admin %}🚫 Admin entfernen{% else %}👑 Admin machen{% endif %}
+                </button>
+                <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteUser({{ user.id }})">🗑 Löschen</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
         <a href="/dashboard" class="btn btn-primary btn-back">🔙 Zurück zum Dashboard</a>
     </div>
 
     <script>
-        function updatePlan(userId, newPlan) {
-            fetch("/admin/update_plan", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ user_id: userId, plan: newPlan })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error("Fehler beim Aktualisieren");
-                return response.json();
-            })
-            .then(data => {
-                alert("✅ Tarif erfolgreich geändert.");
-            })
-            .catch(err => {
-                alert("❌ Fehler: " + err.message);
-            });
-        }
-    </script>
+    function updatePlan(userId, newPlan) {
+        fetch("/admin/update_plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId, plan: newPlan })
+        })
+        .then(res => res.json())
+        .then(data => alert("✅ Tarif aktualisiert"))
+        .catch(err => alert("❌ Fehler: " + err.message));
+    }
+
+    function toggleAdmin(userId) {
+        fetch("/admin/toggle_admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(res => res.json())
+        .then(() => location.reload())
+        .catch(err => alert("❌ Fehler beim Umschalten des Admin-Status"));
+    }
+
+    function deleteUser(userId) {
+        if (!confirm("Willst du diesen Benutzer wirklich löschen?")) return;
+        fetch("/admin/delete_user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(res => res.json())
+        .then(() => location.reload())
+        .catch(err => alert("❌ Fehler beim Löschen"));
+    }
+</script>
 </body>
 </html>
