@@ -430,9 +430,10 @@ def emails():
     saved = min(found, get_user_limits()["emails"])
 
     if found:
-    msg = f"✅ {found} Email(s) gefunden. Davon gespeichert: {saved}."
+        msg = f"✅ {found} Email(s) gefunden. Davon gespeichert: {saved}."
     else:
-    msg = "❌ Keine Ergebnisse gefunden."
+        msg = "❌ Keine Ergebnisse gefunden."
+
     return render_template("emails.html", message=msg, results=results)
 
 
