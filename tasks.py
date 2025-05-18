@@ -40,7 +40,7 @@ class TempEmail(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
 
-class SeenEmail(Base):
+class SeenEmail(Base):  # ← ← ← ОБЯЗАТЕЛЬНО вставь!
     __tablename__ = "seen_emails"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
