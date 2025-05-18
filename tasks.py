@@ -21,11 +21,11 @@ celery = Celery("tasks", broker=REDIS_URL)
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = scoped_session(sessionmaker(bind=engine))
+
+# Только один вызов declarative_base
 Base = declarative_base()
 
-# Модель временных email'ов
-Base = declarative_base()
-
+# Модели
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
@@ -41,7 +41,7 @@ class TempEmail(Base):
     user_id = Column(Integer, ForeignKey("users.id"))  # user_id ссылается на users.id
     email = Column(String)
 
-
+# Создание таблиц (если не существуют)
 Base.metadata.create_all(bind=engine)
 
 # Настройки фильтрации
