@@ -1,141 +1,180 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tarife – LeadGen</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f9fc;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tarife – LeadGen</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f9fc;
+      margin: 0;
+      padding: 0;
+    }
 
-        .navbar {
-            background-color: #1c1c1c;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: white;
-        }
+    .navbar {
+      background-color: #1c1c1c;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
 
-        .navbar ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-            padding: 0;
-            margin: 0;
-        }
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
 
-        .navbar ul li a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .navbar ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
 
-        .preise-container {
-            max-width: 1200px;
-            margin: 50px auto;
-            padding: 0 20px;
-            text-align: center;
-        }
+    .preise-container {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
 
-        .preise-container h2 {
-            font-size: 32px;
-            margin-bottom: 40px;
-        }
+    .preise-container h2 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
 
-        .tarif-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            justify-content: center;
-        }
+    .tarif-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      margin-top: 30px;
+    }
 
-        .tarif-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            width: 280px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
+    .tarif-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      width: 280px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
 
-        .tarif-card h3 {
-            margin-bottom: 15px;
-        }
+    .tarif-card h3 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
 
-        .tarif-card p {
-            margin: 10px 0;
-            font-size: 15px;
-        }
+    .tarif-card p {
+      margin: 8px 0;
+      font-size: 15px;
+    }
 
-        .tarif-card button {
-            margin-top: 15px;
-            padding: 12px 20px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            font-size: 15px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+    .tarif-card ul {
+      padding-left: 18px;
+      font-size: 14px;
+    }
 
-        .tarif-card button[disabled] {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+    .tarif-card button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      font-size: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-        .tarif-card a {
-            text-decoration: none;
-        }
-    </style>
+    .tarif-card button[disabled] {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .tarif-card a {
+      text-decoration: none;
+    }
+
+    .footer-note {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .tarif-card strong {
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
 
-    <!-- 🔝 НАВИГАЦИЯ -->
-    <div class="navbar">
-        <div class="logo">LeadGen</div>
+  <!-- 🔝 NAVIGATION -->
+  <div class="navbar">
+    <div class="logo">LeadGen</div>
+    <ul>
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/emails">E-Mail-Suche</a></li>
+      <li><a href="/send">E-Mail-Versand</a></li>
+      <li><a href="/preise">Tarife</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </div>
+
+  <!-- 💳 TARIFE -->
+  <div class="preise-container">
+    <h2>Wähle den passenden Plan für dein Business</h2>
+    <p>Alle Pläne beinhalten:</p>
+    <ul style="list-style: none; padding: 0; font-size: 15px;">
+      <li>✅ Zugriff auf Google & Maps Suche</li>
+      <li>✅ E-Mail-Erkennung inkl. <code>mailto</code>, Text & Meta</li>
+      <li>✅ DSGVO-konforme Speicherung</li>
+      <li>✅ Export als Excel-Datei</li>
+    </ul>
+
+    <div class="tarif-grid">
+      <div class="tarif-card">
+        <h3>Free</h3>
+        <p><strong>0 € / Monat</strong></p>
         <ul>
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li><a href="/emails">E-Mail-Suche</a></li>
-            <li><a href="/send">E-Mail-Versand</a></li>
-            <li><a href="/preise">Tarife</a></li>
-            <li><a href="/logout">Logout</a></li>
+          <li>🔎 3 Suchanfragen / Monat</li>
+          <li>✉️ 10 E-Mails pro Anfrage</li>
+          <li>📤 Export in Excel</li>
         </ul>
+        <button disabled>Aktiv</button>
+      </div>
+
+      <div class="tarif-card">
+        <h3>Starter</h3>
+        <p><strong>29 € / Monat</strong></p>
+        <ul>
+          <li>🔎 20 Suchanfragen / Monat</li>
+          <li>✉️ 30 E-Mails pro Anfrage</li>
+          <li>📊 Mehr URLs, bessere Treffer</li>
+        </ul>
+        <a href="/subscribe/starter"><button>Abonnieren</button></a>
+      </div>
+
+      <div class="tarif-card">
+        <h3>Profi</h3>
+        <p><strong>69 € / Monat</strong></p>
+        <ul>
+          <li>🔎 50 Suchanfragen / Monat</li>
+          <li>✉️ 50 E-Mails pro Anfrage</li>
+          <li>🚀 Zugriff auf Bing + Deep Google</li>
+        </ul>
+        <a href="/subscribe/profi"><button>Abonnieren</button></a>
+      </div>
     </div>
 
-    <!-- 💳 ТАРИФЫ -->
-    <div class="preise-container">
-        <h2>Unsere Tarife</h2>
-
-        <div class="tarif-grid">
-            <div class="tarif-card">
-                <h3>Free</h3>
-                <p>Bis zu 10 E-Mails</p>
-                <p><strong>0€ / Monat</strong></p>
-                <button disabled>Aktiv</button>
-            </div>
-
-            <div class="tarif-card">
-                <h3>Starter</h3>
-                <p>Bis zu 30 Anfragen</p>
-                <p>Bis zu 30 E-Mails pro mal</p>
-                <p><strong>29€ / Monat</strong></p>
-                <a href="/subscribe/starter"><button>Abonnieren</button></a>
-            </div>
-
-            <div class="tarif-card">
-                <h3>Profi</h3>
-                <p>Bis zu 80 Anfragen</p>
-                <p>Bis zu 50 E-Mails</p>
-                <p><strong>69€ / Monat</strong></p>
-                <a href="/subscribe/profi"><button>Abonnieren</button></a>
-            </div>
-        </div>
+    <div class="footer-note">
+      Monatlich kündbar. Zahlung via SEPA oder Kreditkarte. Mehr Fragen? <a href="/kontakt">Kontaktieren</a>
     </div>
+  </div>
 
 </body>
 </html>
