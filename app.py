@@ -396,8 +396,23 @@ def emails():
     db = SessionLocal()
 
 if request.method == "POST":
+    temp_emails = db.query(TempEmail).filter_by(user_id=user.id).all()
+seen_emails = db.query(SeenEmail).filter_by(user_id=user.id).all()
+db.close()
+
+results = [t.email for t in temp_emails]
+found = len(results)
+saved = min(found, get_user_limits()["emails"])
+
+if found:
+    msg = f"✅ {found} Email(s) gefunden. Datei kann heruntergeladen werden:"
+else:
+    msg = "❌ Noch keine Ergebnisse gefunden."
+
+return render_template("emails.html", message=msg, results=results)
     if user.requests_used >= max_requests:
         return "❌ Du hast dein Anfrage-Limit erreicht."
+
 
     keyword = request.form.get("keyword", "").strip()
     location = request.form.get("location", "").strip()
