@@ -4,26 +4,31 @@ import asyncio
 import aiohttp
 from dotenv import load_dotenv
 from celery import Celery
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app import TempEmail, DATABASE_URL  # Модель вынесена отдельно или определи её тут
-from main import Base, DATABASE_URL  # Используем тот же движок, как в основном коде
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy.orm import sessionmaker, declarative_base
 
+# --- Настройки
 load_dotenv()
-
-# --- Настройки Celery и Redis
 REDIS_URL = os.getenv("REDIS_URL")
-celery = Celery("tasks", broker=REDIS_URL)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# --- SQLAlchemy сессия
+celery = Celery("tasks", broker=REDIS_URL)
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
-# --- Email правила
+# --- Локальная модель (дублируем TempEmail)
+class TempEmail(Base):
+    __tablename__ = "temp_emails"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    email = Column(String)
+
+# --- Email-фильтры
 EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "no-reply", "noreply"]
 
-# --- HTML-парсинг
+# --- HTML-фетчинг
 async def fetch_html(session, url):
     try:
         async with session.get(url, timeout=10) as response:
@@ -43,7 +48,7 @@ async def extract_emails(urls):
                     emails.add(email)
     return list(emails)
 
-# --- Главная задача Celery
+# --- Celery-задача
 @celery.task
 def collect_emails_to_file(user_id, urls, max_count):
     print(f"📥 Starte E-Mail-Sammlung für User {user_id}")
@@ -53,13 +58,9 @@ def collect_emails_to_file(user_id, urls, max_count):
 
     db = SessionLocal()
     try:
-        # Удаляем старые
         db.query(TempEmail).filter_by(user_id=user_id).delete()
-
-        # Сохраняем новые
         for e in selected:
             db.add(TempEmail(user_id=user_id, email=e))
-
         db.commit()
         print(f"✅ Emails gespeichert für User {user_id}")
     except Exception as e:
