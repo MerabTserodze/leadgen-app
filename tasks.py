@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from celery import Celery
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import TempEmail  # Модель вынесена отдельно или определи её тут
+from app import TempEmail, DATABASE_URL  # Модель вынесена отдельно или определи её тут
 from main import Base, DATABASE_URL  # Используем тот же движок, как в основном коде
 
 load_dotenv()
