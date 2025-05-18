@@ -32,6 +32,10 @@
       <li><a href="/logout">Logout</a></li>
     </ul>
   </div>
+  <div class="mb-2">
+    <button type="button" class="btn btn-outline-info btn-sm" onclick="getSuggestions()">🔍 Vorschläge anzeigen</button>
+    <ul id="suggestions" class="list-group mt-2"></ul>
+  </div>
 
   <div class="container" style="padding: 40px 20px;">
     <h2>E-Mail-Suche</h2>
@@ -79,6 +83,38 @@
       document.getElementById('loading').style.display = 'block';
     }
   </script>
+<script>
+function getSuggestions() {
+    const topic = document.querySelector('input[name="keyword"]').value;
+    if (!topic) return alert("Bitte gib ein Thema ein.");
+
+    fetch("/suggest_keywords", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ topic })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById("suggestions");
+        list.innerHTML = "";
+        if (data.keywords) {
+            data.keywords.forEach(k => {
+                const li = document.createElement("li");
+                li.textContent = k.replace(/^[0-9]+\\.\\s*/, '');
+                li.classList.add("list-group-item", "list-group-item-action");
+                li.style.cursor = "pointer";
+                li.onclick = () => {
+                    document.querySelector('input[name="keyword"]').value = li.textContent;
+                };
+                list.appendChild(li);
+            });
+        } else {
+            list.innerHTML = "<li class='list-group-item text-danger'>❌ Fehler bei Vorschlägen</li>";
+        }
+    })
+    .catch(() => alert("Fehler beim Abrufen der Vorschläge."));
+}
+</script>
 
 </body>
 </html>
