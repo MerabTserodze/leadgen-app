@@ -56,6 +56,12 @@
 
     <!-- Loading-Anzeige -->
     <div class="loading" id="loading">🔄 Suche läuft, bitte warten...</div>
+    {% if message %}
+  <div class="results-count">{{ message }}</div>
+  <form action="/download" method="get" style="margin-top: 20px;">
+    <button type="submit" class="btn btn-secondary">📥 Datei herunterladen (Excel)</button>
+     </form>
+        {% endif %}
 
     <!-- Ergebnisse -->
     {% if results %}
