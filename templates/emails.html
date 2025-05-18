@@ -103,18 +103,18 @@
       <a href="/download" class="btn btn-success">📥 Datei herunterladen (Excel)</a>
     </div>
   {% elif request.method == "POST" %}
-  <p style="margin-top: 30px; color: orange;">
-    🕒 Ergebnis wird vorbereitet... Bitte warte ein paar Sekunden...
-  </p>
-  <script>
-    setTimeout(() => {
-      window.location.reload();
-    }, 5000);  // 5 секунд
-  </script>
-{% endif %}
+    <p style="margin-top: 30px; color: orange;">
+      🕒 Ergebnis wird vorbereitet... Bitte warte ein paar Sekunden...
+    </p>
+    <script>
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+    </script>
+  {% endif %}
+</div>
 
-    <!-- Automatisches Reload nach 5 Sekunden -->
-  
+<script>
   function showLoading() {
     document.getElementById('loading').style.display = 'block';
   }
@@ -135,7 +135,7 @@
       if (data.keywords) {
         data.keywords.forEach(k => {
           const li = document.createElement("li");
-          li.textContent = k.replace(/^[0-9]+\\.\\s*/, '');
+          li.textContent = k.replace(/^[0-9]+\.\s*/, '');
           li.classList.add("list-group-item", "list-group-item-action");
           li.style.cursor = "pointer";
           li.onclick = () => {
