@@ -376,7 +376,7 @@ def emails():
         google_urls = get_google_results(keyword, location)
         urls = list(set(maps_urls + google_urls))
         urls = [url for url in urls if all(x not in url for x in [".pdf", ".jpg", ".png", ".zip", "/login", "/cart", "facebook.com", "youtube.com", "tripadvisor.com"])]
-        urls = urls[:50]
+        urls = urls[:20]
 
         print("🚀 Отправка задачи Celery на генерацию Excel-файла...")
         collect_emails_to_file.delay(user.id, urls, max_emails)
