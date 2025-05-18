@@ -490,21 +490,26 @@ def download():
 
     db = SessionLocal()
     emails = db.query(TempEmail).filter_by(user_id=user.id).all()
+    seen = db.query(SeenEmail).filter_by(user_id=user.id).all()
     db.close()
+
     if not emails:
         return "❌ Noch keine Ergebnisse gefunden."
 
+    seen_dict = {e.email: e for e in seen}
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Emails"
+    ws.title = "Contacts"
     ws.append(["E-Mail"])
+
     for e in emails:
         ws.append([e.email])
 
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    return send_file(output, download_name="emails.xlsx", as_attachment=True)
+    return send_file(output, download_name="contacts.xlsx", as_attachment=True)
+
 
 
 
