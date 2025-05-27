@@ -1,9 +1,9 @@
 import os
 import re
+import ssl
 import asyncio
 import aiohttp
 import openpyxl
-import ssl
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from celery import Celery
@@ -17,11 +17,7 @@ load_dotenv()
 
 # --- Настройки Redis и Celery
 REDIS_URL = os.getenv("REDIS_URL")
-celery = Celery(
-    "tasks",
-    broker=REDIS_URL,
-    broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE}
-)
+celery = Celery("tasks", broker=REDIS_URL, broker_use_ssl={"ssl_cert_reqs": ssl.CERT_NONE})
 
 # --- Настройки базы данных
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -48,6 +44,12 @@ class TempEmail(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     email = Column(String)
 
+class TempPhone(Base):
+    __tablename__ = "temp_phones"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    phone = Column(String)
+
 class SeenEmail(Base):
     __tablename__ = "seen_emails"
     id = Column(Integer, primary_key=True)
@@ -58,55 +60,11 @@ Base.metadata.create_all(bind=engine)
 
 # --- Фильтры
 EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
-EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "no-reply", "noreply", "support", "admin", "localhost"]
+PHONE_REGEX = r"(\+?\d[\d\s\-\(\)]{7,}\d)"
+EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "noreply", "no-reply", "support", "admin", "localhost"]
 COMMON_PATHS = ["/kontakt", "/impressum", "/about", "/ueber-uns", "/info", "/contact"]
 
-# --- Получение HTML с сайта
-async def fetch_html(session, url, retries=2):
-    for attempt in range(retries):
-        try:
-            async with session.get(url, timeout=10) as response:
-                if response.status == 200:
-                    return await response.text()
-        except Exception as e:
-            print(f"⚠️ Ошибка при загрузке {url}: {e}")
-            await asyncio.sleep(1)
-    return ""
-
-# --- Извлечение email-ов с множества URL
-async def extract_emails_from_url_async(urls):
-    collected_emails = set()
-    headers = {"User-Agent": "Mozilla/5.0"}
-
-    async with aiohttp.ClientSession(headers=headers) as session:
-        tasks = []
-        for url in urls:
-            base_url = url.rstrip("/")
-            extended_urls = [base_url + path for path in COMMON_PATHS]
-            all_urls = [base_url] + extended_urls
-            for u in all_urls:
-                tasks.append(fetch_html(session, u))
-
-        responses = await asyncio.gather(*tasks)
-        for html in responses:
-            if not html:
-                continue
-            soup = BeautifulSoup(html, "html.parser")
-            text_emails = re.findall(EMAIL_REGEX, soup.get_text())
-            collected_emails.update(text_emails)
-            for tag in soup.find_all("a", href=True):
-                href = tag["href"]
-                if "mailto:" in href:
-                    email = href.split("mailto:")[1].split("?")[0]
-                    collected_emails.add(email)
-
-    filtered = [
-        email for email in collected_emails
-        if not any(bad in email for bad in EXCLUDE_DOMAINS)
-    ]
-    return list(set(filtered))
-
-# --- Главная задача Celery
+# --- Celery Task
 @celery.task(
     bind=True,
     autoretry_for=(OperationalError,),
@@ -114,18 +72,6 @@ async def extract_emails_from_url_async(urls):
     max_retries=5
 )
 def collect_emails_to_file(self, user_id, urls, max_count):
-    import re
-    from bs4 import BeautifulSoup
-    import aiohttp
-    import asyncio
-
-    EMAIL_REGEX = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
-    PHONE_REGEX = r"(\+?\d[\d\s\-\(\)]{7,}\d)"
-    headers = {"User-Agent": "Mozilla/5.0"}
-
-    COMMON_PATHS = ["/kontakt", "/impressum", "/about", "/ueber-uns", "/info", "/contact"]
-    EXCLUDE_DOMAINS = ["sentry.io", "cloudflare", "example.com", "noreply", "no-reply", "support", "admin", "localhost"]
-
     async def fetch_html(session, url, retries=2):
         for attempt in range(retries):
             try:
@@ -138,6 +84,8 @@ def collect_emails_to_file(self, user_id, urls, max_count):
 
     async def extract_contacts(urls):
         results = []
+        headers = {"User-Agent": "Mozilla/5.0"}
+
         async with aiohttp.ClientSession(headers=headers) as session:
             tasks = []
             for url in urls:
@@ -153,18 +101,22 @@ def collect_emails_to_file(self, user_id, urls, max_count):
             for html, page_url in zip(responses, urls_checked):
                 if not html:
                     continue
+
                 soup = BeautifulSoup(html, "html.parser")
                 text = soup.get_text(separator=" ", strip=True)
+
                 emails = re.findall(EMAIL_REGEX, text)
                 phones = re.findall(PHONE_REGEX, text)
 
-                clean_emails = set()
-                for e in emails:
-                    e = e.strip().replace("\n", "").replace("\r", "").replace("\xa0", "")
-                    if not any(bad in e for bad in EXCLUDE_DOMAINS):
-                        clean_emails.add(e)
+                clean_emails = {
+                    e.strip() for e in emails
+                    if not any(bad in e for bad in EXCLUDE_DOMAINS)
+                }
 
-                clean_phones = set(p.strip() for p in phones if len(p.strip()) > 6)
+                clean_phones = {
+                    p.strip() for p in phones
+                    if len(p.strip()) >= 6
+                }
 
                 if clean_emails or clean_phones:
                     results.append({
@@ -172,36 +124,39 @@ def collect_emails_to_file(self, user_id, urls, max_count):
                         "emails": list(clean_emails),
                         "phones": list(clean_phones)
                     })
-
         return results
 
-    # --- Выполнение парсинга
-    print(f"📥 Сбор контактов для пользователя {user_id}")
+    # --- Работа с БД
+    print(f"📥 Сбор данных для user_id={user_id}")
     db = SessionLocal()
-
     try:
         db.query(TempEmail).filter_by(user_id=user_id).delete()
+        db.query(TempPhone).filter_by(user_id=user_id).delete()
         db.commit()
 
         contacts = asyncio.run(extract_contacts(urls))
 
         seen_emails = set(row[0] for row in db.query(SeenEmail.email).filter_by(user_id=user_id).all())
-        new_rows = []
+        selected = []
 
-        for item in contacts:
-            for email in item["emails"]:
+        for contact in contacts:
+            for email in contact["emails"]:
                 if email not in seen_emails:
-                    new_rows.append({
-                        "website": item["website"],
-                        "email": email,
-                        "phones": item["phones"]
-                    })
                     db.add(TempEmail(user_id=user_id, email=email))
                     db.add(SeenEmail(user_id=user_id, email=email))
                     seen_emails.add(email)
 
+            for phone in contact["phones"]:
+                db.add(TempPhone(user_id=user_id, phone=phone))
+
+            if contact["emails"]:
+                selected.append({
+                    "website": contact["website"],
+                    "emails": contact["emails"],
+                    "phones": contact["phones"]
+                })
+
         db.commit()
-        selected = new_rows[:max_count]
 
         # --- Excel файл
         wb = openpyxl.Workbook()
@@ -209,19 +164,22 @@ def collect_emails_to_file(self, user_id, urls, max_count):
         ws.title = "Contacts"
         ws.append(["Website", "Email", "Phone"])
 
-        for row in selected:
-            phones = row["phones"] or [""]
-            for phone in phones:
-                ws.append([row["website"], row["email"], phone])
+        written = 0
+        for item in selected:
+            for email in item["emails"]:
+                phones = item["phones"] or [""]
+                for phone in phones:
+                    if written < max_count:
+                        ws.append([item["website"], email, phone])
+                        written += 1
 
-        output_path = f"/tmp/emails_user_{user_id}.xlsx"
-        wb.save(output_path)
-        print(f"✅ Excel-файл готов: {output_path}")
+        path = f"/tmp/emails_user_{user_id}.xlsx"
+        wb.save(path)
+        print(f"✅ Excel сохранён: {path}")
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка: {e}")
+        print(f"❌ Ошибка в задаче: {e}")
         raise self.retry(exc=e)
-
     finally:
         db.close()
